@@ -1,7 +1,8 @@
-package superflowerwarspp;
-import flowerwarspp.preset.*;
+package superflowerwars64;
 
-import flowerwarspp.SWRBoard;
+import flowerwarspp.preset.*;
+import java.util.*;
+import superflowerwars64.SWRBoard;
 
 public class MyViewer implements Viewer {
 
@@ -12,7 +13,7 @@ public class MyViewer implements Viewer {
        public MyViewer(SWRBoard gameboard,
                         PlayerColor turnColor,
                         Status state) {
-           this.SWRBoard = gameboard;
+           this.gameboard = gameboard;
            this.turnColor = turnColor;
            this.state = state;
        }
@@ -40,11 +41,11 @@ public class MyViewer implements Viewer {
        }
 
        public Collection<Move> getPossibleMoves() {
-            // ?
+            return gameboard.getPossibleMoves();
        }
 
        public int getPoints(final PlayerColor color) {
-
+            return gameboard.getPoints(color);
        }
 
 }
