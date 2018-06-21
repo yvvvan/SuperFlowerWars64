@@ -16,20 +16,23 @@ public class SWRBoard implements Board, Viewable {
   private Status status;
   /**Aktueller Spieler*/
   private PlayerColor current = PlayerColor.Red;
-  /**Interner Speicher für Flower-menge*/
-  private HashSet<Flower> flowerset;
+  /**Interner Speicher für rote Flower-menge*/
+  private HashSet<Flower> redflowerset;
+  /**Interner Speicher für blaue Flower-menge*/
+  private HashSet<Flower> blueflowerset;
   /**Interner Speicher für einzelne Felder auf dem Brett*/
   private HashSet<Field> fieldset;
   /**Interner Speicher für moegliche Zuege*/
-  private HashSet<Move> moveset; //SIZE?!?!?!?!?
+  private HashSet<Move> moveset;
   /**Interner Speicher für Graeben-menge*/
-  private HashSet<Ditch> ditchset; //SIZE?!?!?!?!??!
+  private HashSet<Ditch> ditchset;
 
   /**Konstruktor, der die Größe des Feldes (in Dreieckskanten) übergeben bekommt*/
   public SWRBoard(int size) {
     if(size >= 3 && size <= 30) {
       this.size = size;
-      flowerset = new HashSet(size * size);
+      redflowerset = new HashSet(size * size);
+      blueflowerset = new HashSet(size * size);
       fieldset = new HashSet(size * size);
 
 
@@ -39,30 +42,14 @@ public class SWRBoard implements Board, Viewable {
       int j = 1;
       //Laufvariablen
       fieldset.add(fieldconstructor(i, j, fieldset));
-      //Keine duplikate, daher egal. aber nötig da fieldconstr ein field returnt
+      //Keine duplikate, daher dass geaddet wird. aber nötig, da fieldconstr ein field returnt
 
       //ENDE Initialisierung----------------------------------------------------
 
-      //Initialisierung-ALTE VERSION!!!!!!!!!!--------------------------------------------------
-      /*for(int i = 1; i <= (size); i++) {
-        int j = 1;
-        for(; j <= (size); j++) {
-          //If you wanna make sense of this, look in early notes: "this exists!"
-          if((i+j) <= (size+1)) {
-            fieldset.add(new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j)));
-            //STILL GOTTA DO NEIGHBORINOS HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if((j-1) != 0) {
-              fieldset.add(new Field(new Position(i, j), new Position(i+1, j), new Position(i+1, j-1)));
-            }
-          }
-        }
-      }
-      //ende Init---------------------------------------------------------------
-      */
       for(Field x : fieldset) {
         System.out.println(x.toString());
-      }//USED FOR TESTING/*
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      }//USED FOR TESTING
+
     /*  Flower f = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
       for(Field x : fieldset) {
         if(x.equals(f)) {
@@ -105,7 +92,7 @@ public class SWRBoard implements Board, Viewable {
 
     Field f = new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j));
 
-    if((i+j) < (size + 1)) {//WENN I+J == SIZE, IST MAN AN DER LINKEN KANTE ANGEKOMMEN!
+    if((i+j) < (size + 1)) {//WENN I+J == SIZE, IST MAN AN DER RECHTEN KANTE ANGEKOMMEN!
       Field ff = invertedfieldconstructor(i, j+1, coll);
       f.setRight(ff);
       ff.setLeft(f);
@@ -141,7 +128,16 @@ public class SWRBoard implements Board, Viewable {
 
     switch (type) {
       case Flower:
-        //TO DO
+        if(isFlowerMoveLegal(move)) {
+          if(current == PlayerColor.Red) {
+            redflowerset.add(move.getFirstFlower());
+            redflowerset.add(move.getSecondFlower());
+          }
+          else {
+            blueflowerset.add(move.getFirstFlower());
+            blueflowerset.add(move.getSecondFlower());
+          }
+        }
         break;
         //END CASE FLOWER-------------------------------------------------------------------------
 
@@ -178,15 +174,41 @@ public class SWRBoard implements Board, Viewable {
         break;//DO I NEED IT? I MEAN IT ENDS RIGHT THERE RIGHT?
         //END DEFAULT CASE------------------------------------------------------
 
-    }
+    }//END SWITCH
 
   }//END MAKE
   //============================================================================
 
   public Collection<Move> getPossibleMoves() {
-        System.out.println("getPossibleMoves got called, but it's not yet implemented :(");
-       return null;
+      System.out.println("getPossibleMoves got called, but it's not yet implemented :(");
+
+      return null;
   }//END GETPOSSIBLEMOVES
+  //============================================================================
+
+  public boolean isFlowerMoveLegal (Move move) {
+
+    if(move.getType() == MoveType.Flower) {
+      //RLY CHECK EVERYTHING ACCORDING TO GIVEN GARTENBAU RULES?
+
+      return true;
+    }
+
+    //THROW EXCEPTION OR PRINT SMTHG?
+
+    return false;
+  }//END ISFLOWERMOVELEGAL
+  //============================================================================
+
+  public boolean isDitchMoveLegal (Move move) {
+
+    if(move.getType() == MoveType.Flower) {
+      //TO DO!!!
+      return true;
+    }
+
+    return false;
+  }//END ISDITCHMOVELEGAL
   //============================================================================
 
   public int getPoints(final PlayerColor color) {
