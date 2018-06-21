@@ -29,16 +29,47 @@ public class Field extends Flower{
     super(eins, zwei, drei);
 
   }//END CONSTRUCTOR
+  //============================================================================
 
+  public int getneighboramount () {
+    int amount = 0;
+    if(left != null) {
+      amount++;
+    }
+    if(right != null) {
+      amount++;
+    }
+    if(vertical != null) {
+      amount++;
+    }
+    return amount;
+  }
+  //============================================================================
+
+  public void setRight(Field r) {
+    right = r;
+  }
+  //============================================================================
+
+  public void setLeft(Field l) {
+    left = l;
+  }
+  //============================================================================
+
+  public void setVertical(Field v) {
+    vertical = v;
+  }
+  //============================================================================
 
   @Override
   public String toString() {
-    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + "\n";
+    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + getneighboramount() + "\n";
   }//TESTING!!!!!!!!!!!!!!
 
 
   public void setColor(PlayerColor c) {
     color = c;
   }
+  //============================================================================
 
 }//END CLASS
