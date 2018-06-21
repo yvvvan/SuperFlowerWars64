@@ -32,8 +32,19 @@ public class SWRBoard implements Board, Viewable {
       flowerset = new HashSet(size * size);
       fieldset = new HashSet(size * size);
 
+
       //Initialisierung---------------------------------------------------------
-      for(int i = 1; i <= (size); i++) {
+
+      int i = 1;
+      int j = 1;
+      //Laufvariablen
+      fieldset.add(fieldconstructor(i, j, fieldset));
+      //Keine duplikate, daher egal. aber nötig da fieldconstr ein field returnt
+
+      //ENDE Initialisierung----------------------------------------------------
+
+      //Initialisierung-ALTE VERSION!!!!!!!!!!--------------------------------------------------
+      /*for(int i = 1; i <= (size); i++) {
         int j = 1;
         for(; j <= (size); j++) {
           //If you wanna make sense of this, look in early notes: "this exists!"
@@ -47,18 +58,18 @@ public class SWRBoard implements Board, Viewable {
         }
       }
       //ende Init---------------------------------------------------------------
-
-      /*for(Field x : fieldset) {
+      */
+      for(Field x : fieldset) {
         System.out.println(x.toString());
-      }USED FOR TESTING*/
+      }//USED FOR TESTING/*
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      Flower f = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
+    /*  Flower f = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
       for(Field x : fieldset) {
         if(x.equals(f)) {
           x.setColor(current);
           System.out.println(x.toString());
         }
-      }//FRIGGIN TESTING OVER HERE!!!!!!!!!!
+      }//FRIGGIN TESTING OVER HERE!!!!!!!!!!*/
 
 
     }
@@ -88,6 +99,40 @@ public class SWRBoard implements Board, Viewable {
   public int getSize () {
     return size;
   }//END GETSIZE
+  //============================================================================
+
+  public Field fieldconstructor(int i, int j, Collection<Field> coll) {
+
+    Field f = new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j));
+
+    if((i+j) < (size + 1)) {//WENN I+J == SIZE, IST MAN AN DER LINKEN KANTE ANGEKOMMEN!
+      Field ff = invertedfieldconstructor(i, j+1, coll);
+      f.setRight(ff);
+      ff.setLeft(f);
+    }
+    coll.add(f);
+    return f;
+
+  }//END FIELDCONSTRUCTOR
+  //============================================================================
+
+  public Field invertedfieldconstructor(int i, int j, Collection<Field> coll) {
+
+    Field f = new Field(new Position(i, j), new Position(i+1, j-1), new Position(i+1, j));
+
+    Field ff = fieldconstructor(i, j, coll); //DIES IST DER OBERE NACHBAR
+    //EIN UMGEKEHRTES FELD HAT IMMER EINEN OBEREN NACHBARN
+    f.setVertical(ff);
+    ff.setVertical(f);
+
+    Field fff = fieldconstructor(i+1, j-1, coll); //DIES IST DER RECHTE NACHBAR
+    //EIN UMGEKEHRTES FELD HAT AUCH IMMER EINEN RECHTEN NACHBARN
+    f.setRight(fff);
+    fff.setLeft(f);
+    coll.add(f);
+    return f;
+
+  }//END INVERTEDFIELDCONSTRUCTOR
   //============================================================================
 
   @Override
