@@ -21,8 +21,12 @@ public class Field extends Flower{
   private Position [] pos = new Position[3];*/
   /**Wenn es ein Blumenbeet hat, welcher Farbe ist es?*/
   private PlayerColor color = null;
-  /**Markierung für die legal/illegal Strategie aus der 'Hilfestellung für Implementation'*/
+  /**Markierung für die legal/illegal Strategie aus der 'Hilfestellung für Implementation'
+  * 1 = 'grau', alle anderen Zahlen sind andere Farben
+  */
   private int clustermark = 0;
+  /**Anzahl der Blumenbeete im eigenen Cluster*/
+  private int clusteramount = 0;
 
 
   public Field (Position eins, Position zwei, Position drei) {
@@ -61,14 +65,34 @@ public class Field extends Flower{
   }
   //============================================================================
 
+  public void setClusteramount(int a) {
+    clusteramount = a;
+  }
+  //============================================================================
+
+  public int getClusteramount() {
+    return clusteramount;
+  }
+  //============================================================================
+
   @Override
   public String toString() {
     return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + getneighboramount() + "\n";
   }//TESTING!!!!!!!!!!!!!!
-
+  //============================================================================
 
   public void setColor(PlayerColor c) {
     color = c;
+  }
+  //============================================================================
+
+  public void setMark(int mark) {
+    clustermark = mark;
+  }
+  //============================================================================
+
+  public int getMark() {
+    return clustermark;
   }
   //============================================================================
 
