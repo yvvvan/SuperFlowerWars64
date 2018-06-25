@@ -24,8 +24,10 @@ public class SWRBoard implements Board, Viewable {
   private HashSet<Field> fieldset;
   /**Interner Speicher für moegliche Zuege*/
   private HashSet<Move> moveset;
-  /**Interner Speicher für Graeben-menge*/
-  private HashSet<Ditch> ditchset;
+  /**Interner Speicher für rote Graeben-menge*/
+  private HashSet<Ditch> redditchset;
+  /**Interner Speicher für blaue Graeben-menge*/
+  private HashSet<Ditch> blueditchset;
 
   /**Konstruktor, der die Größe des Feldes (in Dreieckskanten) übergeben bekommt*/
   public SWRBoard(int size) {
@@ -95,9 +97,10 @@ public class SWRBoard implements Board, Viewable {
     if((i+j) < (size + 1)) {//WENN I+J == SIZE, IST MAN AN DER RECHTEN KANTE ANGEKOMMEN!
       Field ff = invertedfieldconstructor(i, j+1, coll);
       f.setRight(ff);
-      ff.setLeft(f);
+      ff.setLeft(ff);
+      coll.add(ff);
+
     }
-    coll.add(f);
     return f;
 
   }//END FIELDCONSTRUCTOR
@@ -109,14 +112,39 @@ public class SWRBoard implements Board, Viewable {
 
     Field ff = fieldconstructor(i, j, coll); //DIES IST DER OBERE NACHBAR
     //EIN UMGEKEHRTES FELD HAT IMMER EINEN OBEREN NACHBARN
-    f.setVertical(ff);
-    ff.setVertical(f);
+    if(!coll.contains(ff)) {
+      f.setVertical(ff);
+      ff.setVertical(f);
+      coll.add(ff);
+    }
+    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT
+      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN EINFACH NUR
+      DIE NACHBARN AKTUALISIERT*/
+      for(Field x : coll) {
+        if(x.equals(ff)) {
+          x.setVertical(f);
+          f.setVertical(x);
+        }
+      }
+    }
 
     Field fff = fieldconstructor(i+1, j-1, coll); //DIES IST DER RECHTE NACHBAR
     //EIN UMGEKEHRTES FELD HAT AUCH IMMER EINEN RECHTEN NACHBARN
-    f.setRight(fff);
-    fff.setLeft(f);
-    coll.add(f);
+    if(!coll.contains(fff)) {
+      f.setRight(fff);
+      fff.setLeft(f);
+      coll.add(fff);
+    }
+    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT
+      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN EINFACH NUR
+      DIE NACHBARN AKTUALISIERT*/
+      for(Field x : coll) {
+        if(x.equals(fff)) {
+          x.setVertical(f);
+          fff.setVertical(x);
+        }
+      }
+    }
     return f;
 
   }//END INVERTEDFIELDCONSTRUCTOR
@@ -128,17 +156,13 @@ public class SWRBoard implements Board, Viewable {
 
     switch (type) {
       case Flower:
-        if(isFlowerMoveLegal(move)) {
-          if(current == PlayerColor.Red) {
-            redflowerset.add(move.getFirstFlower());
-            redflowerset.add(move.getSecondFlower());
+        if(current == PlayerColor.Red) {
+          flowerMove(move, redflowerset);
           }
-          else {
-            blueflowerset.add(move.getFirstFlower());
-            blueflowerset.add(move.getSecondFlower());
+        else {
+          flowerMove(move, blueflowerset);
           }
-        }
-        break;
+          break;
         //END CASE FLOWER-------------------------------------------------------------------------
 
       case Ditch:
@@ -167,7 +191,7 @@ public class SWRBoard implements Board, Viewable {
           status = Status.Draw;
         }
         break;
-        //END CASE END-------------------------------------------------------------------------
+        //END CASE END----------------------------------------------------------
 
       default:
         System.out.println("Make-methode hat keinen Movetype...?");
@@ -186,15 +210,46 @@ public class SWRBoard implements Board, Viewable {
   }//END GETPOSSIBLEMOVES
   //============================================================================
 
-  public boolean isFlowerMoveLegal (Move move) {
-
-    if(move.getType() == MoveType.Flower) {
-      //RLY CHECK EVERYTHING ACCORDING TO GIVEN GARTENBAU RULES?
-
-      return true;
+  public Collection<Flower> getFlowers(final PlayerColor color) {
+    if(color == PlayerColor.Red) {
+      return redflowerset;
     }
+    else {
+      return blueflowerset;
+    }
+  }//END GETFLOWERS
+  //============================================================================
 
-    //THROW EXCEPTION OR PRINT SMTHG?
+  public Collection<Ditch> getDitches(final PlayerColor color) {
+    if(color == PlayerColor.Red) {
+      return redditchset;
+    }
+    else {
+      return blueditchset;
+    }
+  }//END GETDITCHES
+  //============================================================================
+
+  public boolean flowerMove (Move move, HashSet<Flower> set) {
+
+      Flower first = move.getFirstFlower();
+      Flower second = move.getSecondFlower();
+      HashSet<Field> otherset = new HashSet<Field>();  //set der zu den Blumen korrelierenden Felder
+      boolean emptiness = set.isEmpty();
+
+        set.add(first);
+        set.add(second);
+        if(!emptiness) {
+          for(Flower x : set) {
+            for(Field y : fieldset) {
+              if(x.equals(y)) {
+                otherset.add(y);
+                y.setMark(1); //='grau färben'
+              }
+            }
+          }
+          //WIE BESTIMME ICH HIER EINE 'BELIEBIGE' BLUME?
+        }//ENDE CASE: ES SIND KEINE BLUMEN EXISTENT
 
     return false;
   }//END ISFLOWERMOVELEGAL
@@ -218,7 +273,7 @@ public class SWRBoard implements Board, Viewable {
   //============================================================================
 
   public static void main (String[] args) {
-    SWRBoard b = new SWRBoard(3);
+    SWRBoard b = new SWRBoard(4);
     int x = b.getPoints(b.getCurrentPlayer());
     System.out.println(b.status);
     Move m = new Move(MoveType.Surrender);
