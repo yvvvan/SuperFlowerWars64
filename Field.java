@@ -28,6 +28,8 @@ public class Field extends Flower{
   /**Anzahl der Blumenbeete im eigenen Cluster*/
   private int clusteramount = 0;
 
+  //ICH BRAUCH HIER NOCH NE ID (WIE BEI FLOWER), WAS GIBT SINN ?!?!?!?!
+
 
   public Field (Position eins, Position zwei, Position drei) {
     super(eins, zwei, drei);
@@ -35,7 +37,7 @@ public class Field extends Flower{
   }//END CONSTRUCTOR
   //============================================================================
 
-  public int getneighboramount () {
+  public int getNeighborAmount () {
     int amount = 0;
     if(left != null) {
       amount++;
@@ -55,13 +57,28 @@ public class Field extends Flower{
   }
   //============================================================================
 
+  public Field getRight() {
+    return right;
+  }
+  //============================================================================
+
   public void setLeft(Field l) {
     left = l;
   }
   //============================================================================
 
+  public Field getLeft() {
+    return left;
+  }
+  //============================================================================
+
   public void setVertical(Field v) {
     vertical = v;
+  }
+  //============================================================================
+
+  public Field getVertical() {
+    return vertical;
   }
   //============================================================================
 
@@ -77,7 +94,7 @@ public class Field extends Flower{
 
   @Override
   public String toString() {
-    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + getneighboramount() + "\n";
+    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + getNeighborAmount() + "\n";
   }//TESTING!!!!!!!!!!!!!!
   //============================================================================
 
