@@ -33,18 +33,15 @@ public class SWRBoard implements Board, Viewable {
   public SWRBoard(int size) {
     if(size >= 3 && size <= 30) {
       this.size = size;
-      redflowerset = new HashSet(size * size);
-      blueflowerset = new HashSet(size * size);
-      fieldset = new HashSet(size * size);
+      redflowerset = new HashSet<Flower>(size * size);
+      blueflowerset = new HashSet<Flower>(size * size);
+      fieldset = new HashSet<Field>(size * size);
 
 
       //Initialisierung---------------------------------------------------------
 
-      int i = 1;
-      int j = 1;
-      //Laufvariablen
-      fieldset.add(fieldconstructor(i, j, fieldset));
-      //Keine duplikate, daher dass geaddet wird. aber nötig, da fieldconstr ein field returnt
+      fieldset.add(fieldconstructor(1, 1, fieldset));
+      status = Status.Ok;
 
       //ENDE Initialisierung----------------------------------------------------
 
@@ -90,7 +87,18 @@ public class SWRBoard implements Board, Viewable {
   }//END GETSIZE
   //============================================================================
 
-  public Field fieldconstructor(int i, int j, Collection<Field> coll) {
+  public int getNeighborAmount (Flower flower) {
+
+    for(Field field : fieldset) {
+      if(field.equals(flower)) {
+        return field.getNeighborAmount();
+      }
+    }
+    return 0;
+  }//END GETNEIGHBORAMOUNT
+  //============================================================================
+
+  private Field fieldconstructor(int i, int j, Collection<Field> coll) {
 
     Field f = new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j));
 
@@ -106,7 +114,7 @@ public class SWRBoard implements Board, Viewable {
   }//END FIELDCONSTRUCTOR
   //============================================================================
 
-  public Field invertedfieldconstructor(int i, int j, Collection<Field> coll) {
+  private Field invertedfieldconstructor(int i, int j, Collection<Field> coll) {
 
     Field f = new Field(new Position(i, j), new Position(i+1, j-1), new Position(i+1, j));
 
@@ -119,7 +127,9 @@ public class SWRBoard implements Board, Viewable {
     }
     else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT
       WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN EINFACH NUR
-      DIE NACHBARN AKTUALISIERT*/
+      DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
+      FELD KONSTRUIEREN MIT FOLGENDER KOLLISION, DIE NUR EIN FELD MIT ZU WENIG
+      NACHBARN IM SET LASSEN WÜRDE*/
       for(Field x : coll) {
         if(x.equals(ff)) {
           x.setVertical(f);
@@ -127,7 +137,7 @@ public class SWRBoard implements Board, Viewable {
         }
       }
     }
-
+    //--------------------------------------------------------------------------
     Field fff = fieldconstructor(i+1, j-1, coll); //DIES IST DER RECHTE NACHBAR
     //EIN UMGEKEHRTES FELD HAT AUCH IMMER EINEN RECHTEN NACHBARN
     if(!coll.contains(fff)) {
@@ -137,7 +147,9 @@ public class SWRBoard implements Board, Viewable {
     }
     else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT
       WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN EINFACH NUR
-      DIE NACHBARN AKTUALISIERT*/
+      DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
+      FELD KONSTRUIEREN MIT FOLGENDER KOLLISION, DIE NUR EIN FELD MIT ZU WENIG
+      NACHBARN IM SET LASSEN WÜRDE*/
       for(Field x : coll) {
         if(x.equals(fff)) {
           x.setVertical(f);
@@ -153,6 +165,12 @@ public class SWRBoard implements Board, Viewable {
   @Override
   public void make(final Move move) throws IllegalStateException {
     MoveType type = move.getType();
+
+    if(status == Status.RedWin || status == Status.BlueWin || status == Status.Draw) {
+      //^^FUNKTIONIERT DAS HIER!??!?!?!!^^ oft kommt bad operand fehler!
+      System.out.println("Spiel vorbei. Es dürfen keine weiteren Züge gemacht werden.");
+      return;
+    }
 
     switch (type) {
       case Flower:
@@ -230,29 +248,78 @@ public class SWRBoard implements Board, Viewable {
   }//END GETDITCHES
   //============================================================================
 
-  public boolean flowerMove (Move move, HashSet<Flower> set) {
+  private boolean flowerMove (Move move, HashSet<Flower> playerflowerset) {
 
       Flower first = move.getFirstFlower();
       Flower second = move.getSecondFlower();
       HashSet<Field> otherset = new HashSet<Field>();  //set der zu den Blumen korrelierenden Felder
-      boolean emptiness = set.isEmpty();
+      boolean empty = playerflowerset.isEmpty();
 
-        set.add(first);
-        set.add(second);
-        if(!emptiness) {
-          for(Flower x : set) {
-            for(Field y : fieldset) {
-              if(x.equals(y)) {
-                otherset.add(y);
-                y.setMark(1); //='grau färben'
-              }
+        playerflowerset.add(first); //Schritt Eins aus 'erkennen von gültigen Zügen'
+        playerflowerset.add(second);
+        if(!empty) {
+          if(isFlowerMoveLegal(playerflowerset)) {
+              return true;
             }
+          else {
+            playerflowerset.remove(first);
+            playerflowerset.remove(second);
+            //HIER MUSS NOCH IWIE DER SPIELER NE NEUE CHANCE FÜR ZUG KRIEGEN!!!
+            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            return false;
           }
-          //WIE BESTIMME ICH HIER EINE 'BELIEBIGE' BLUME?
-        }//ENDE CASE: ES SIND KEINE BLUMEN EXISTENT
+        }
+    return true;
+  }//END FLOWERMOVE
+  //============================================================================
+
+  private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset) {
+
+    Field [] fieldsetcopy = new Field[fieldset.size()];
+    fieldset.toArray(fieldsetcopy);
+    int mark = 1;
+
+    for(Flower flower : playerflowerset) {
+      for(Field field : fieldsetcopy) {
+        if(field.equals(flower)) {
+          field.setMark(mark);
+        }
+      }//IRGENDWAS BESSERES ALS 2 FOREACHs !?!?!?
+    } //schritt zwei aus 'erkennen von gültigen zügen'
+
+    for(Field f : fieldsetcopy) {
+      if(f.getMark() == 1) {
+        additionalColoring(f, ++mark);
+      }
+    }//OB DAS GEHT!?!?!??!?!?!!??!!!!!!!!!!!!??????
+
 
     return false;
-  }//END ISFLOWERMOVELEGAL
+  }//ENDE ISFLOWERMOVELEGAL
+  //============================================================================
+
+  public void additionalColoring (Field field, int mark) {
+
+    field.setMark(mark);
+
+    if(field.getRight() != null)  {
+      if(field.getRight().getMark() == 1) {
+        additionalColoring(field.getRight(), mark);
+      }
+    }
+    if(field.getLeft() != null)  {
+      if(field.getLeft().getMark() == 1) {
+        additionalColoring(field.getLeft(), mark);
+      }
+    }
+    if(field.getVertical() != null)  {
+      if(field.getVertical().getMark() == 1) {
+        additionalColoring(field.getVertical(), mark);
+      }
+    }
+    //OB DAS GEHT!?!??!?!?!??!?!?!?!?!?
+
+  }//END ADDITIONALCOLORING
   //============================================================================
 
   public boolean isDitchMoveLegal (Move move) {
