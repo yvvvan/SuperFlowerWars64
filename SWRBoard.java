@@ -277,7 +277,8 @@ public class SWRBoard implements Board, Viewable {
 
     Field [] fieldsetcopy = new Field[fieldset.size()];
     fieldset.toArray(fieldsetcopy);
-    int mark = 1;
+    int mark = 1; //1 = grau, andere ints sind andere farben für die felder
+    int amount = 0; // für schritt 7
 
     for(Flower flower : playerflowerset) {
       for(Field field : fieldsetcopy) {
@@ -290,9 +291,25 @@ public class SWRBoard implements Board, Viewable {
     for(Field f : fieldsetcopy) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
-      }
+      }//Schritte 3-6
     }//OB DAS GEHT!?!?!??!?!?!!??!!!!!!!!!!!!??????
 
+    for(int i = 2; i < mark; i++) {
+      amount = 0;
+      for(field f : fieldsetcopy) {
+        if(f.getMark() == i) {
+          amount++;
+        }
+      }
+      for(field f : fieldsetcopy) {
+        if(f.getMark() == i) {
+          f.setClusteramount(amount);
+        }
+      }
+    }/*NE ECHT BESCHISSENE LÖSUNG, ÜBERLEGE OB ICH DAS IWIE IN ADDITIONALCOLORING
+    BESSER LÖSEN KANN, BISHER KEINE IDEE*/
+
+    //hier schritt 8
 
     return false;
   }//ENDE ISFLOWERMOVELEGAL
