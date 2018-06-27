@@ -15,7 +15,6 @@ class Dots extends JPanel {
       int width = screenSize.width * 2/3;
       setSize(new Dimension(width, height));
       setVisible(true);
-      //repaint();
   }
 
   public String toString() {
@@ -50,31 +49,37 @@ class Lines extends JPanel {
         int width = screenSize.width * 2/3;
         setSize(new Dimension(width, height));
         setVisible(true);
-        //repaint();
      }
 
-     public void paint(Graphics g) {
-       g.setColor(Color.BLACK);
+     public void paintComponent(Graphics g) {;
        g.drawLine(x1,y1,x2,y2);
+       Graphics2D g2 = (Graphics2D) g;
+       g2.setStroke(new BasicStroke(6));
+       g2.setColor(Color.BLACK);
+       g2.drawLine(x1,y1,x2,y2);
      }
 }
 
-
+/*
 class DrawPolygon extends JPanel {
 
-    private Polygon poly;
+    private int[] xpoints;
+    private int[] ypoints;
+    private int npoints;
 
-    public DrawPolygon(Polygon poly) {
-        this.poly = poly;
+    public DrawPolygon(int[] xpoints, int[] ypoints, int npoints) {
+        this.xpoints = xpoints;
+        this.ypoints = ypoints;
+        this.npoints = npoints;
         setVisible(true);
     }
 
     public void paint(Graphics g) {
         g.setColor(Color.BLACK);
-        g.fillPolygon(poly);
+        g.drawPolygon(xpoints, ypoints, npoints);
     }
 }
-
+*/
 public class Spielbrett {
     public static void main(String args[]) {
         JFrame frame = new tmpFrame("HAHAHAHH");
@@ -86,7 +91,7 @@ public class Spielbrett {
         else {
           size = Integer.parseInt(args[0]);
 		  if (size < 3 || size > 30) {
-              System.out.println("Wrong input!");
+              throw new IllegalArgumentException("Die Größe des Spielbretts liegt nicht in [3,30]");
           }
 		}
         int npoints = (size+1)*(size+2)/2;
@@ -100,13 +105,16 @@ public class Spielbrett {
         Dots[] dotsArr = new Dots[npoints];
         int[] xpoints = new int[npoints];
         int[] ypoints = new int[npoints];
+        int[] blabla = new int[size+1];
+        int[] blablabla = new int[size+1];
+        // Drawing points
         while (i > 0) {
             j = 0;
             while(j < i) {
                 Dots d = new Dots(tmp + j*lenLineHor + k*lenLineHor/2, 999 - k*lenLineVer);
                 dotsArr[cnt] = d;
-                xpoints[cnt] = dotsArr[cnt].getXCoord();
-                ypoints[cnt] = dotsArr[cnt].getYCoord();
+                xpoints[cnt] = (dotsArr[cnt].getXCoord())+7;
+                ypoints[cnt] = (dotsArr[cnt].getYCoord())+7;
                 frame.add(d);
                 cnt++;
                 j++;
@@ -115,12 +123,56 @@ public class Spielbrett {
             i--;
         }
 
-         for (int l = 0; l < npoints; l++) {
-             System.out.println(dotsArr[l]);
+        // Drawing horizontal lines
+        int counter = size;
+        j = 0;
+        i = 0;
+        while(counter < npoints) {
+            while(j < counter) {
+                Lines l = new Lines(xpoints[j], ypoints[j], xpoints[j+1], ypoints[j+1]);
+                frame.add(l);
+                j++;
+            }
+            counter += size-i;
+            i++;
+            j++;
+        }
+
+        // Drawing diagonal lines (from left to right)
+        cnt = 0;
+        j = 0;
+        counter = npoints;
+        while (cnt < size) {
+            int step = size + 1;
+            while((j+step) < counter) {
+                Lines l = new Lines(xpoints[j], ypoints[j], xpoints[j+step], ypoints[j+step]);
+                System.out.println("j = " + j + "   j+step = " + (j+step));
+                System.out.println("Counter = " + counter);
+                System.out.println("Step = " + step);
+                j += step;
+                step--;
+                frame.add(l);
+            }
+            cnt++;
+            j = cnt;
+            counter -= cnt;
          }
-         System.out.println(npoints);
-        // Polygon poly = new Polygon(xpoints, ypoints, npoints);
-         //DrawPolygon dPoly = new DrawPolygon(poly);
-         //frame.add(dPoly);
-   }
+         // Drawing diagonal lines (from left to right)
+         cnt = 0;
+         j = size;
+         counter = npoints;
+         while (cnt < size) {
+             int step = size;
+             while((j+step) < counter && step > 0) {
+                 Lines l = new Lines(xpoints[j], ypoints[j], xpoints[j+step], ypoints[j+step]);
+                 j += step;
+                 step--;
+                 frame.add(l);
+             }
+             cnt++;
+             j = size-cnt;
+             counter -= cnt;
+         }
+    }
+
 }
