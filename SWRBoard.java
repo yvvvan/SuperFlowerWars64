@@ -45,9 +45,9 @@ public class SWRBoard implements Board, Viewable {
 
       //ENDE Initialisierung----------------------------------------------------
 
-      for(Field x : fieldset) {
+      /*for(Field x : fieldset) {
         System.out.println(x.toString());
-      }//USED FOR TESTING
+      }//USED FOR TESTING*/
 
     /*  Flower f = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
       for(Field x : fieldset) {
@@ -125,9 +125,9 @@ public class SWRBoard implements Board, Viewable {
       ff.setVertical(f);
       coll.add(ff);
     }
-    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT
-      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN EINFACH NUR
-      DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
+    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT.
+      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN ES WERDEN EINFACH
+      NUR DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
       FELD KONSTRUIEREN MIT FOLGENDER KOLLISION, DIE NUR EIN FELD MIT ZU WENIG
       NACHBARN IM SET LASSEN WÜRDE*/
       for(Field x : coll) {
@@ -145,9 +145,9 @@ public class SWRBoard implements Board, Viewable {
       fff.setLeft(f);
       coll.add(fff);
     }
-    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT
-      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN EINFACH NUR
-      DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
+    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT.
+      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN ES WERDEN EINFACH
+      NUR DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
       FELD KONSTRUIEREN MIT FOLGENDER KOLLISION, DIE NUR EIN FELD MIT ZU WENIG
       NACHBARN IM SET LASSEN WÜRDE*/
       for(Field x : coll) {
@@ -212,8 +212,8 @@ public class SWRBoard implements Board, Viewable {
         //END CASE END----------------------------------------------------------
 
       default:
-        System.out.println("Make-methode hat keinen Movetype...?");
-        break;//DO I NEED IT? I MEAN IT ENDS RIGHT THERE RIGHT?
+        throw new MoveException("Move hatte keinen gültigen Typ.")
+        break;
         //END DEFAULT CASE------------------------------------------------------
 
     }//END SWITCH
@@ -258,14 +258,13 @@ public class SWRBoard implements Board, Viewable {
         playerflowerset.add(first); //Schritt Eins aus 'erkennen von gültigen Zügen'
         playerflowerset.add(second);
         if(!empty) {
-          if(isFlowerMoveLegal(playerflowerset)) {
+          if(isFlowerMoveLegal(playerflowerset, first, second)) {
               return true;
             }
           else {
             playerflowerset.remove(first);
             playerflowerset.remove(second);
-            //HIER MUSS NOCH IWIE DER SPIELER NE NEUE CHANCE FÜR ZUG KRIEGEN!!!
-            //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            status = Status.Illegal;
             return false;
           }
         }
@@ -273,45 +272,68 @@ public class SWRBoard implements Board, Viewable {
   }//END FLOWERMOVE
   //============================================================================
 
-  private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset) {
+  private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset, Flower first, Flower second) {
 
     Field [] fieldsetcopy = new Field[fieldset.size()];
     fieldset.toArray(fieldsetcopy);
     int mark = 1; //1 = grau, andere ints sind andere farben für die felder
     int amount = 0; // für schritt 7
-
+    //-vv Alle flowers kriegen eine graue Färbung vv----------------------------
     for(Flower flower : playerflowerset) {
       for(Field field : fieldsetcopy) {
         if(field.equals(flower)) {
           field.setMark(mark);
         }
       }//IRGENDWAS BESSERES ALS 2 FOREACHs !?!?!?
-    } //schritt zwei aus 'erkennen von gültigen zügen'
-
+    }
+    //-vv Alle felder mit einer grauen Färbung färben sich und ihre grauen Nachbarn rekursiv
     for(Field f : fieldsetcopy) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
       }//Schritte 3-6
     }//OB DAS GEHT!?!?!??!?!?!!??!!!!!!!!!!!!??????
 
-    for(int i = 2; i < mark; i++) {
+    //vv schritte 7-11 vv
+    for(int i = 2; i < mark; i++) {//schritt 7
       amount = 0;
-      for(field f : fieldsetcopy) {
+      for(Field f : fieldsetcopy) {
         if(f.getMark() == i) {
           amount++;
         }
       }
-      for(field f : fieldsetcopy) {
+      if(amount > 4) { //hier schritt 9
+        System.out.println("FlowerMove ist nicht legal");
+        //^^HIER WAHRSCHL LIEBER NE EXCEPTION DIE HOCHGEWORFEN WIRD, ODER?
+        return false;
+      }
+      for(Field f : fieldsetcopy) {//rückspeichern der clustermenge in die felder
         if(f.getMark() == i) {
           f.setClusteramount(amount);
         }
       }
+      // vv Schritt 10-1 (färben)
+      if(amount == 4) {
+        for(Field f : fieldsetcopy) {
+          if(f.getMark() == i) {
+            illegalColoring(f);
+          }
+        }
+      }
+      // vv Schritt 10-2 (überprüfen)
+      for(Field f : fieldsetcopy) {
+        if(f.equals(first) || f.equals(second)) {
+          if(f.getMark() == -1) {
+            return false;
+          }
+        }
+      }
+
     }/*NE ECHT BESCHISSENE LÖSUNG, ÜBERLEGE OB ICH DAS IWIE IN ADDITIONALCOLORING
     BESSER LÖSEN KANN, BISHER KEINE IDEE*/
 
-    //hier schritt 8
 
-    return false;
+
+    return true;
   }//ENDE ISFLOWERMOVELEGAL
   //============================================================================
 
@@ -339,6 +361,85 @@ public class SWRBoard implements Board, Viewable {
   }//END ADDITIONALCOLORING
   //============================================================================
 
+  public void illegalColoring(Field field) {
+
+    int mark = field.getMark();
+    /*Field right = null;
+    if(field.getRight() != null) {
+      right = field.getRight();
+    }WIE WÄRS HIERMIT? ODER AUCH WIEDER STRESS WEGEN NULL SPÄTER?*/
+
+    //vv wenn ein rechtes feld existiert und nicht dieselbe farbe hat wie es selbst vv
+    if(field.getRight() != null) {
+      if(field.getRight().getMark() != mark) {
+        /*^^ in separaten klauseln, damit wenns in einer ist,
+        nicht rumgeheult wird, wenn right = null ist*/
+        field.getRight().setMark(-1);
+        if(field.getRight().getVertical() != null) {
+          if(field.getRight().getVertical().getMark() != mark) {
+            field.getRight().getVertical().setMark(-1);
+          }
+        }
+        if(field.getRight().getRight() != null) {
+          if(field.getRight().getRight().getMark() != mark) {
+            field.getRight().getRight().setMark(-1);
+          }
+          if(field.getRight().getRight().getVertical() != null) {
+            if(field.getRight().getRight().getVertical().getMark() != mark) {
+              field.getRight().getRight().getVertical().setMark(-1);
+            }
+          }
+        }
+      }
+    }
+    if(field.getLeft() != null) {
+      if(field.getLeft().getMark() != mark) {
+        /*^^ in separaten klauseln, damit wenns in einer ist,
+        nicht rumgeheult wird, wenn right = null ist*/
+        field.getLeft().setMark(-1);
+        if(field.getLeft().getLeft() != null) {
+          if(field.getLeft().getLeft().getMark() != mark) {
+            field.getLeft().getLeft().setMark(-1);
+          }
+        }
+        if(field.getLeft().getVertical() != null) {
+          if(field.getLeft().getVertical().getMark() != mark) {
+            field.getLeft().getVertical().setMark(-1);
+          }
+          if(field.getLeft().getVertical().getRight() != null) {
+            if(field.getLeft().getVertical().getRight().getMark() != mark) {
+              field.getLeft().getVertical().getRight().setMark(-1);
+            }
+          }
+        }
+      }
+    }
+    if(field.getVertical() != null) {
+      if(field.getVertical().getMark() != mark) {
+        /*^^ in separaten klauseln, damit wenns in einer ist,
+        nicht rumgeheult wird, wenn right = null ist*/
+        field.getVertical().setMark(-1);
+        if(field.getVertical().getRight() != null) {
+          if(field.getVertical().getRight().getMark() != mark) {
+            field.getVertical().getRight().setMark(-1);
+          }
+        }
+        if(field.getVertical().getLeft() != null) {
+          if(field.getVertical().getLeft().getMark() != mark) {
+            field.getVertical().getLeft().setMark(-1);
+          }
+          if(field.getVertical().getLeft().getLeft() != null) {
+            if(field.getVertical().getLeft().getLeft().getMark() != mark) {
+              field.getVertical().getLeft().getLeft().setMark(-1);
+            }
+          }
+        }
+      }
+    }
+
+  }//END ILLEGALCOLORING
+  //============================================================================
+
   public boolean isDitchMoveLegal (Move move) {
 
     if(move.getType() == MoveType.Flower) {
@@ -357,12 +458,25 @@ public class SWRBoard implements Board, Viewable {
   //============================================================================
 
   public static void main (String[] args) {
-    SWRBoard b = new SWRBoard(4);
-    int x = b.getPoints(b.getCurrentPlayer());
+    SWRBoard b = new SWRBoard(3);
+    //int x = b.getPoints(b.getCurrentPlayer());
     System.out.println(b.status);
+
+    Flower flower = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
+    b.redflowerset.add(flower);
+
+    for(Field f : b.fieldset) {
+      if(f.equals(flower)) {
+        b.additionalColoring(f, 2);
+        System.out.println(f.toString());
+      }
+    }
+
     Move m = new Move(MoveType.Surrender);
     b.make(m);
     System.out.println(b.status);
+
+
 
 
   }//END MAIN
