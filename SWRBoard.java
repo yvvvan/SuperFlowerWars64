@@ -176,15 +176,21 @@ public class SWRBoard implements Board, Viewable {
       case Flower:
         if(current == PlayerColor.Red) {
           flowerMove(move, redflowerset);
-          }
+        }
         else {
           flowerMove(move, blueflowerset);
-          }
+        }
           break;
         //END CASE FLOWER-------------------------------------------------------------------------
 
       case Ditch:
-        //TO DO
+        if(current == PlayerColor.Red) {
+          ditchMove(move, redditchset, redflowerset);
+        }
+        else {
+          ditchMove(move, blueditchset, blueflowerset);
+        }
+
         break;
         //END CASE DITCH-------------------------------------------------------------------------
 
@@ -212,8 +218,8 @@ public class SWRBoard implements Board, Viewable {
         //END CASE END----------------------------------------------------------
 
       default:
-        throw new MoveException("Move hatte keinen gültigen Typ.")
-        break;
+        throw new MoveFormatException("Move hatte keinen gültigen Typ.");
+        //^^ ANDERER EXCEPTION TYP VLLT^^ ?!?!?!?
         //END DEFAULT CASE------------------------------------------------------
 
     }//END SWITCH
@@ -253,12 +259,15 @@ public class SWRBoard implements Board, Viewable {
       Flower first = move.getFirstFlower();
       Flower second = move.getSecondFlower();
       HashSet<Field> otherset = new HashSet<Field>();  //set der zu den Blumen korrelierenden Felder
+      //bzw ne kopie des spielbretts
       boolean empty = playerflowerset.isEmpty();
+      //^^wird hier init., damit sobald die flowers geaddet werden, das nicht sowieso nicht leer ist!^^
 
         playerflowerset.add(first); //Schritt Eins aus 'erkennen von gültigen Zügen'
         playerflowerset.add(second);
         if(!empty) {
           if(isFlowerMoveLegal(playerflowerset, first, second)) {
+              status = Status.Ok;
               return true;
             }
           else {
@@ -275,6 +284,9 @@ public class SWRBoard implements Board, Viewable {
   private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset, Flower first, Flower second) {
 
     Field [] fieldsetcopy = new Field[fieldset.size()];
+    /*WENN ICH DAS ZU ARRAY MACHE, WERDEN INSTANZEN KOPIERT?
+    IST NÄMLICH NICHT SO GUT, WENN ICH MARKIERUNGEN SETZE DIE DANN VON isFlowerMoveLegal
+    GELESEN WERDEN, WENN DIE PLAYERCOLOR ANDERS IST!!!*/
     fieldset.toArray(fieldsetcopy);
     int mark = 1; //1 = grau, andere ints sind andere farben für die felder
     int amount = 0; // für schritt 7
@@ -282,7 +294,12 @@ public class SWRBoard implements Board, Viewable {
     for(Flower flower : playerflowerset) {
       for(Field field : fieldsetcopy) {
         if(field.equals(flower)) {
-          field.setMark(mark);
+          if(field.getMark() != -2) {// ->wenn ditch da ist
+            field.setMark(mark);
+          }
+          else {
+            return false;
+          }
         }
       }//IRGENDWAS BESSERES ALS 2 FOREACHs !?!?!?
     }
@@ -337,7 +354,7 @@ public class SWRBoard implements Board, Viewable {
   }//ENDE ISFLOWERMOVELEGAL
   //============================================================================
 
-  public void additionalColoring (Field field, int mark) {
+  private void additionalColoring (Field field, int mark) {
 
     field.setMark(mark);
 
@@ -361,7 +378,7 @@ public class SWRBoard implements Board, Viewable {
   }//END ADDITIONALCOLORING
   //============================================================================
 
-  public void illegalColoring(Field field) {
+  private void illegalColoring(Field field) {
 
     int mark = field.getMark();
     /*Field right = null;
@@ -440,19 +457,84 @@ public class SWRBoard implements Board, Viewable {
   }//END ILLEGALCOLORING
   //============================================================================
 
-  public boolean isDitchMoveLegal (Move move) {
+  private boolean ditchMove (Move move, HashSet<Ditch> playerditchset, HashSet<Flower> playerflowerset) {
 
-    if(move.getType() == MoveType.Flower) {
-      //TO DO!!!
+    Ditch ditch = move.getDitch();
+
+
+    if(checkDitchPositions(ditch)) {//länge gecheckt!
+      for(Flower flower : playerflowerset) {
+        if(isDitchConnectedToFlower(ditch, flower)){//zw. 2 Blumen gecheckt!
+          //for breaken oder so weiter machen?!
+        }
+      }
+
+      playerditchset.add(ditch);
       return true;
     }
+    else {
+      return false;
+    }
 
+  }//END DITCHMOVE
+  //============================================================================
+
+  public boolean isDitchConnectedToFlower (Ditch ditch, Flower flower) {
+
+    Position depos1 = ditch.getFirst();
+    Position depos2 = ditch.getSecond();
+
+    Position flpos1 = flower.getFirst();
+    Position flpos2 = flower.getSecond();
+    Position flpos3 = flower.getThird();
+
+    if(depos1.equals(flpos1) || depos1.equals(flpos2) || depos1.equals(flpos3)) {
+      return true;
+    }//in zwei klauseln weil sonst zu unleserlich >.>
+    if(depos2.equals(flpos1) || depos2.equals(flpos2) || depos2.equals(flpos3)) {
+      return true;
+    }
     return false;
-  }//END ISDITCHMOVELEGAL
+  }//END ISDITCHCONNECTEDTOFLOWER
+  //============================================================================
+
+  private boolean checkDitchPositions (Ditch ditch) {
+
+    int row1 = ditch.getFirst().getRow();
+    int column1 = ditch.getFirst().getColumn();
+    int row2 = ditch.getSecond().getRow();
+    int column2 = ditch.getSecond().getColumn();
+
+    int differenzRow = row1 - row2;
+
+    int differenzColumn = column1 - column2;
+
+
+
+    int summeCR = differenzRow + differenzColumn;
+    if(summeCR < 0) {
+      summeCR *= -1;
+    }
+    if(differenzRow < 0) { //in betrag machen,damit kein umständl. zeug später
+      differenzRow *= -1;
+    }
+    if(differenzColumn < 0) {
+      differenzColumn *= -1;
+    }
+    //^^KANN ICH HIER AUCH EINFACH UNSIGNED CASTEN!??!!?
+
+
+    if((differenzRow > 1) || (differenzColumn > 1) || (summeCR > 1)) {
+      return false;
+    }
+    return true;
+
+  }//END CHECKDITCHPOSTIONS
   //============================================================================
 
   public int getPoints(final PlayerColor color) {
       System.out.println("getPoints got called, but it's not yet implemented :(");
+      //kann hier mit clusteramount arbeiten, da das immer wenn move bneutzt wird, aufgerufen wird
        return 0;
   }//END GETPOINTS
   //============================================================================
@@ -471,6 +553,13 @@ public class SWRBoard implements Board, Viewable {
         System.out.println(f.toString());
       }
     }
+
+    //checkin checkDitchPositions
+    /*Ditch di = Ditch.parseDitch("{(1,2),(2,1)}");
+    Ditch du = Ditch.parseDitch("{(1,1),(2,2)}");
+
+    System.out.println(b.checkDitchPositions(di));
+    System.out.println(b.checkDitchPositions(du));*/
 
     Move m = new Move(MoveType.Surrender);
     b.make(m);
