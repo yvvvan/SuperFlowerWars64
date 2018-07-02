@@ -345,8 +345,7 @@ public class SWRBoard implements Board, Viewable {
         }
       }
 
-    }/*NE ECHT BESCHISSENE LÖSUNG, ÜBERLEGE OB ICH DAS IWIE IN ADDITIONALCOLORING
-    BESSER LÖSEN KANN, BISHER KEINE IDEE*/
+    }
 
 
 
@@ -460,21 +459,30 @@ public class SWRBoard implements Board, Viewable {
   private boolean ditchMove (Move move, HashSet<Ditch> playerditchset, HashSet<Flower> playerflowerset) {
 
     Ditch ditch = move.getDitch();
+    int flowerconnectioncamount = 0;
+    Position pos1 = ditch.getFirst();
+    Position pos2 = ditch.getSecond();
 
 
     if(checkDitchPositions(ditch)) {//länge gecheckt!
-      for(Flower flower : playerflowerset) {
-        if(isDitchConnectedToFlower(ditch, flower)){//zw. 2 Blumen gecheckt!
-          //for breaken oder so weiter machen?!
+      for(Ditch d : playerditchset) {//checken ob ein anderer ditch dieselbe pos hat
+        if(pos1.equals(d.getFirst()) || pos1.equals(d.getSecond())) {
+          if(pos2.equals(d.getFirst()) || pos2.equals(d.getSecond())) {
+            for(Flower flower : playerflowerset) {
+              if(isDitchConnectedToFlower(ditch, flower)){//zw. 2 Blumen gecheckt!
+                flowerconnectioncamount++;
+              }
+            }//ENDE FOREACH
+            if(flowerconnectioncamount > 1) {
+              if(isNeighborEmpty(ditch)) {//FELDER WERDEN GLEICHZEITIG UNFRUCHTBAR GEMACHT!
+                return true;
+              }
+            }
+          }
         }
       }
-
-      playerditchset.add(ditch);
-      return true;
     }
-    else {
       return false;
-    }
 
   }//END DITCHMOVE
   //============================================================================
@@ -530,6 +538,33 @@ public class SWRBoard implements Board, Viewable {
     return true;
 
   }//END CHECKDITCHPOSTIONS
+  //============================================================================
+
+  public boolean isNeighborEmpty (Ditch ditch) {
+
+    Position pos1 = ditch.getFirst();
+    Position pos2 = ditch.getSecond();
+    int emptyfields = 0;
+
+    for(Field field : fieldset) {/*SUCHE NACH FELDER DIE BEIDE POSs MIT DEM DITCH
+      GEMEINSAM HABEN!*/
+      if(pos1.equals(field.getFirst()) || pos1.equals(field.getSecond()) || pos1.equals(field.getThird())) {
+        if(pos2.equals(field.getFirst()) || pos2.equals(field.getSecond()) || pos2.equals(field.getThird())) {
+            if(field.getColor() == null) {
+              field.setMark(-2); //HIER WIRD AUCH GLEICH DAS FELD UNFRUCHTBAR GEMACHT!!!!
+              emptyfields++;
+            }
+        }
+      }
+    }
+    if(emptyfields == 2) {
+      return true;
+    }
+    else {
+      return false;
+    }
+
+  }//END ISNEIGHBOREMPTY
   //============================================================================
 
   public int getPoints(final PlayerColor color) {
