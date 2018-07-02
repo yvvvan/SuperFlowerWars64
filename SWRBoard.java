@@ -258,8 +258,6 @@ public class SWRBoard implements Board, Viewable {
 
       Flower first = move.getFirstFlower();
       Flower second = move.getSecondFlower();
-      HashSet<Field> otherset = new HashSet<Field>();  //set der zu den Blumen korrelierenden Felder
-      //bzw ne kopie des spielbretts
       boolean empty = playerflowerset.isEmpty();
       //^^wird hier init., damit sobald die flowers geaddet werden, das nicht sowieso nicht leer ist!^^
 
@@ -283,28 +281,26 @@ public class SWRBoard implements Board, Viewable {
 
   private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset, Flower first, Flower second) {
 
-    Field [] fieldsetcopy = new Field[fieldset.size()];
-    /*WENN ICH DAS ZU ARRAY MACHE, WERDEN INSTANZEN KOPIERT?
-    IST NÄMLICH NICHT SO GUT, WENN ICH MARKIERUNGEN SETZE DIE DANN VON isFlowerMoveLegal
-    GELESEN WERDEN, WENN DIE PLAYERCOLOR ANDERS IST!!!*/
-    fieldset.toArray(fieldsetcopy);
+
+
     int mark = 1; //1 = grau, andere ints sind andere farben für die felder
     int amount = 0; // für schritt 7
     //-vv Alle flowers kriegen eine graue Färbung vv----------------------------
     for(Flower flower : playerflowerset) {
-      for(Field field : fieldsetcopy) {
+      for(Field field : fieldset) {
         if(field.equals(flower)) {
           if(field.getMark() != -2) {// ->wenn ditch da ist
             field.setMark(mark);
           }
           else {
+            cleanUpMarks();
             return false;
           }
         }
       }//IRGENDWAS BESSERES ALS 2 FOREACHs !?!?!?
     }
     //-vv Alle felder mit einer grauen Färbung färben sich und ihre grauen Nachbarn rekursiv
-    for(Field f : fieldsetcopy) {
+    for(Field f : fieldset) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
       }//Schritte 3-6
@@ -313,7 +309,7 @@ public class SWRBoard implements Board, Viewable {
     //vv schritte 7-11 vv
     for(int i = 2; i < mark; i++) {//schritt 7
       amount = 0;
-      for(Field f : fieldsetcopy) {
+      for(Field f : fieldset) {
         if(f.getMark() == i) {
           amount++;
         }
@@ -321,25 +317,27 @@ public class SWRBoard implements Board, Viewable {
       if(amount > 4) { //hier schritt 9
         System.out.println("FlowerMove ist nicht legal");
         //^^HIER WAHRSCHL LIEBER NE EXCEPTION DIE HOCHGEWORFEN WIRD, ODER?
+        cleanUpMarks();
         return false;
       }
-      for(Field f : fieldsetcopy) {//rückspeichern der clustermenge in die felder
+      for(Field f : fieldset) {//rückspeichern der clustermenge in die felder
         if(f.getMark() == i) {
           f.setClusteramount(amount);
         }
       }
       // vv Schritt 10-1 (färben)
       if(amount == 4) {
-        for(Field f : fieldsetcopy) {
+        for(Field f : fieldset) {
           if(f.getMark() == i) {
             illegalColoring(f);
           }
         }
       }
       // vv Schritt 10-2 (überprüfen)
-      for(Field f : fieldsetcopy) {
+      for(Field f : fieldset) {
         if(f.equals(first) || f.equals(second)) {
           if(f.getMark() == -1) {
+            cleanUpMarks();
             return false;
           }
         }
@@ -348,9 +346,20 @@ public class SWRBoard implements Board, Viewable {
     }
 
 
-
+    cleanUpMarks();
     return true;
   }//ENDE ISFLOWERMOVELEGAL
+  //============================================================================
+
+  public void cleanUpMarks () {
+
+    for(Field f : fieldset) {
+      if(f.getMark() != -2) {
+        f.setMark(0);
+      }
+    }
+
+  }//END CLEANUPMARKS
   //============================================================================
 
   private void additionalColoring (Field field, int mark) {
@@ -575,9 +584,12 @@ public class SWRBoard implements Board, Viewable {
   //============================================================================
 
   public static void main (String[] args) {
-    SWRBoard b = new SWRBoard(3);
+
+    int size = 3;
+
+    SWRBoard b = new SWRBoard(size);
     //int x = b.getPoints(b.getCurrentPlayer());
-    System.out.println(b.status);
+  /*  System.out.println(b.status);
 
     Flower flower = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
     b.redflowerset.add(flower);
@@ -596,12 +608,23 @@ public class SWRBoard implements Board, Viewable {
     System.out.println(b.checkDitchPositions(di));
     System.out.println(b.checkDitchPositions(du));*/
 
-    Move m = new Move(MoveType.Surrender);
+    /*Move m = new Move(MoveType.Surrender);
     b.make(m);
-    System.out.println(b.status);
+    System.out.println(b.status);*/
 
+  /*  Field [] fieldsettest = new Field[size * size];
+    Field [] fieldsettest2 = new Field[size * size];
 
+    b.fieldset.toArray(fieldsettest);
+    fieldsettest2 = fieldsettest.clone();
+    fieldsettest[0].setColor(PlayerColor.Red);
 
+    for(Field f : b.fieldset) {
+      System.out.println(f.toString());
+    }
+    for(Field f : fieldsettest2) {
+      System.out.println(f.toString());
+    }*/
 
   }//END MAIN
   //============================================================================
