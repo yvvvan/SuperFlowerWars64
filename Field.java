@@ -15,20 +15,27 @@ public class Field extends Flower{
   private Field left = null;
   /**Rechter Nachbar*/
   private Field right = null;
-  /**Unterer Nachbar*/
+  /**Vertikaler Nachbar*/
   private Field vertical = null;
   /*/**Position auf dem Brett
   private Position [] pos = new Position[3];*/
   /**Wenn es ein Blumenbeet hat, welcher Farbe ist es?*/
   private PlayerColor color = null;
+
   /**Markierung für die legal/illegal Strategie aus der 'Hilfestellung für Implementation'
-  * 1 = 'grau', alle anderen Zahlen sind andere Farben
+  * -2 = wenn ditch feld unfruchtbar gemacht hat
+  * -1 = für einen Blumenzug ungültiger Zug
+  * 0 = unmarkiert
+  * 1 = 'grau',
+  * alle anderen positiven Zahlen sind andere Farben
   */
   private int clustermark = 0;
   /**Anzahl der Blumenbeete im eigenen Cluster*/
   private int clusteramount = 0;
-
-  //ICH BRAUCH HIER NOCH NE ID (WIE BEI FLOWER), WAS GIBT SINN ?!?!?!?!
+  /**Markierung für die getPoints-Methoden*/
+  private boolean hasbeenchecked = false;
+  /** Serialisierungskonstante */
+  private static final long serialVersionUID = 1L;
 
 
   public Field (Position eins, Position zwei, Position drei) {
@@ -49,6 +56,15 @@ public class Field extends Flower{
       amount++;
     }
     return amount;
+  }
+  //============================================================================
+  public void setCheck(boolean a) {
+    hasbeenchecked = a;
+  }
+  //============================================================================
+
+  public boolean getCheck() {
+    return hasbeenchecked;
   }
   //============================================================================
 
@@ -94,12 +110,17 @@ public class Field extends Flower{
 
   @Override
   public String toString() {
-    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + getNeighborAmount() + "\n";
+    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + color + getNeighborAmount() + " " + getMark() + "\n";
   }//TESTING!!!!!!!!!!!!!!
   //============================================================================
 
   public void setColor(PlayerColor c) {
     color = c;
+  }
+  //============================================================================
+
+  public PlayerColor getColor() {
+    return color;
   }
   //============================================================================
 
