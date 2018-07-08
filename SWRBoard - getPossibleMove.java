@@ -254,6 +254,10 @@ public class SWRBoard implements Board, Viewable {
 
         flowerset = (current == Red)?redflowerset:blueflowerset;
 
+        HashSet<Flower> allflowerset = new HashSet<Flower>();
+        allflowerset.addAll(redflowerset);
+        allflowerset.addAll(blueflowerset);
+
         HashSet<Flower> gardenset = new HashSet<Flower>();
         for(Flower flower : flowerset){
           for(Field field : fieldset){
@@ -349,27 +353,27 @@ public class SWRBoard implements Board, Viewable {
               int c = p2.getColumn();
               int d = p2.getRow();
 
-              int diff1 = a - c;
-              int diff2 = b - d;
+              int diff1 = Math.abs(a - c);
+              int diff2 = Math.abs(b - d);
 
-              if      (diff1 == 0){ //a = c, in one column: like "/"
+              if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
                 if(a-1>0)
                 Flower f1 = new Flower(p1,p2, new Position(a-1,Math.max(b,d)));
                 else Flower f1 = new Flower();
                 Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
               }
-              else if (diff2 == 0){ //b = d, in one row: like "-"
+              if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
                 Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
                 if(b-1>0)
                 Flower f2 = new Flower(p1,p2, new Position(Math.max(a,c),b-1));
                 else Flower f2 = new Flower();
               }
-              else {  //diff1 !=0 && diff2 != 0      // like "\"
+              if (diff1 == 1 && diff2 == 1) {               // like "\"
                 Flower f1 = new Flower(p1,p2, new Position(a,d));
                 Flower f2 = new Flower(p1,p2, new Position(c,b));
               }
 
-              if (!flowerset.contains(f1)&&!flowerset.contains(f2))
+              if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
                 possibleD.add(new Ditch(p1,p2));
             }
           }
