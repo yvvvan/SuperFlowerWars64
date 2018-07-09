@@ -237,8 +237,7 @@ public class SWRBoard implements Board, Viewable {
 
   }//END MAKE
   //============================================================================
-  /*Methode, die die Menge aller gültigen Züge zurückliefert*/
-
+   /*Methode, die die Menge aller gültigen Züge zurückliefert*/
     public Collection<Move> getPossibleMoves() {
 
         HashSet<Ditch> ditchset = new HashSet<Ditch>();
@@ -250,7 +249,7 @@ public class SWRBoard implements Board, Viewable {
         //   case Red:   flowerset = redflowerset; break;
         //   case Blue:  flowerset = blueflowerset; break;
         // }
-        flowerset = (current == Red)?redflowerset:blueflowerset;
+        flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
 
         HashSet<Flower> allflowerset = new HashSet<Flower>();
         allflowerset.addAll(redflowerset);
@@ -268,7 +267,7 @@ public class SWRBoard implements Board, Viewable {
         }
 
       //FLOWER
-        HashSet<Flower> unpossibleF;
+        HashSet<Flower> unpossibleF = new HashSet<Flower>();
 
         //alle besizte Field (red+blue)
         for(Flower flower : redflowerset)
@@ -296,19 +295,19 @@ public class SWRBoard implements Board, Viewable {
 
         //alle Nachbar von ditch (red+blue)
         for(Ditch d : ditchset){
-          //(a,b) (c,d)
+          //(a,b) (c,x)
           int a = d.getFirst().getColumn();
           int b = d.getFirst().getRow();
           int c = d.getSecond().getColumn();
-          int d = d.getSecond().getRow();
+          int x = d.getSecond().getRow();
 
           int diff1 = a - c;
-          int diff2 = b - d;
+          int diff2 = b - x;
 
           if      (diff1 == 0){ //a = c, in one column: like "/"
             if(a-1>0)
-            ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a-1,Math.max(b,d)));
-            ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a+1,Math.min(b,d)));
+            ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a-1,Math.max(b,x)));
+            ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a+1,Math.min(b,x)));
           }
           else if (diff2 == 0){ //b = d, in one row: like "-"
             ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.min(a,c),b+1));
@@ -316,13 +315,14 @@ public class SWRBoard implements Board, Viewable {
             ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.max(a,c),b-1));
           }
           else {  //diff1 !=0 && diff2 != 0      // like "\"
-            ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a,d));
+            ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a,x));
             ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(c,b));
           }
         }
 
         HashSet<Move> possibleM = new HashSet<Move>();
-        HashSet<Flower> possibleF = fieldset;
+        HashSet<Flower> possibleF = new HashSet<Flower>();
+        possibleF.addAll(fieldset);
         possibleF.removeAll(unpossibleF);
         for(Flower f1 : possibleF){
           for(Flower f2 : possibleF){
@@ -342,8 +342,8 @@ public class SWRBoard implements Board, Viewable {
           points.add(flower.getSecond());
           points.add(flower.getThird());
         }
-        
-        HashSet<Position> unPossibleP = new HashSet<Position>(); 
+
+        HashSet<Position> unPossibleP = new HashSet<Position>();
         for(Ditch d : ditchset){
           unPossibleP.add(d.getFirst());
           unPossibleP.add(d.getSecond());
@@ -364,24 +364,23 @@ public class SWRBoard implements Board, Viewable {
 
             if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(diff1 == 1 && diff2 == 1)){
               if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
-                if(a-1>0){
-                Flower f1 = new Flower(p1,p2, new Position(a-1,Math.max(b,d)));}
-                else {Flower f1 = new Flower();}
+                Flower f1 = (a-1>0)?(new Flower(p1,p2, new Position(a-1,Math.max(b,d)))):null;
                 Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
+                ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
               }
               else if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
                 Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
-                if(b-1>0){
-                Flower f2 = new Flower(p1,p2, new Position(Math.max(a,c),b-1));}
-                else{ Flower f2 = new Flower();}
+                Flower f2 = (b-1>0)?(new Flower(p1,p2, new Position(Math.max(a,c),b-1))):null;
+                ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
               }
               else{ // (diff1 == 1 && diff2 == 1)                // like "\"
                 Flower f1 = new Flower(p1,p2, new Position(a,d));
                 Flower f2 = new Flower(p1,p2, new Position(c,b));
+                ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
               }
 
-              if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
-                possibleD.add(new Ditch(p1,p2));
+              // if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
+              //   possibleD.add(new Ditch(p1,p2));
             }
             }
           }
@@ -392,8 +391,16 @@ public class SWRBoard implements Board, Viewable {
             possibleM.add(m);
           }
 
+        //Surrender
+        possibleM.add(new Move(MoveType.Surrender));
+
         return possibleM;
     }//END GETPOSSIBLEMOVES
+    
+    private void ckadDitch(Collection<Ditch> possibleD ,Collection<Flower> allflowerset ,Flower f1,Flower f2,Position p1,Position p2){
+      if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
+        possibleD.add(new Ditch(p1,p2));
+    }
 
     private void ckadFlower(Collection<Flower> list ,Position p1,Position p2,Position p3){
       // //check ?Points on the Board?
@@ -411,7 +418,7 @@ public class SWRBoard implements Board, Viewable {
 
       //a simple way check+add
       Flower f = new Flower(p1,p2,p3);
-      if(field.contains(f))
+      if(fieldset.contains(f))
         list.add(f);
     }
 //============================================================================
