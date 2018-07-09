@@ -364,16 +364,16 @@ public class SWRBoard implements Board, Viewable {
 
             if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(diff1 == 1 && diff2 == 1)){
               if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
-                if(a-1>0)
-                Flower f1 = new Flower(p1,p2, new Position(a-1,Math.max(b,d)));
-                else Flower f1 = new Flower();
+                if(a-1>0){
+                Flower f1 = new Flower(p1,p2, new Position(a-1,Math.max(b,d)));}
+                else {Flower f1 = new Flower();}
                 Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
               }
               else if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
                 Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
-                if(b-1>0)
-                Flower f2 = new Flower(p1,p2, new Position(Math.max(a,c),b-1));
-                else Flower f2 = new Flower();
+                if(b-1>0){
+                Flower f2 = new Flower(p1,p2, new Position(Math.max(a,c),b-1));}
+                else{ Flower f2 = new Flower();}
               }
               else{ // (diff1 == 1 && diff2 == 1)                // like "\"
                 Flower f1 = new Flower(p1,p2, new Position(a,d));
