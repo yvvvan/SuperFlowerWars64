@@ -35,29 +35,13 @@ public class SWRBoard implements Board, Viewable {
       this.size = size;
       redflowerset = new HashSet<Flower>(size * size);
       blueflowerset = new HashSet<Flower>(size * size);
+      redditchset = new HashSet<Ditch>(size * size);
+      blueditchset = new HashSet<Ditch>(size * size);
       fieldset = new HashSet<Field>(size * size);
 
-
       //Initialisierung---------------------------------------------------------
-
       fieldset.add(fieldconstructor(1, 1, fieldset));
       status = Status.Ok;
-
-      //ENDE Initialisierung----------------------------------------------------
-
-      /*for(Field x : fieldset) {
-        System.out.println(x.toString());
-      }//USED FOR TESTING*/
-
-    /*  Flower f = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
-      for(Field x : fieldset) {
-        if(x.equals(f)) {
-          x.setColor(current);
-          System.out.println(x.toString());
-        }
-      }//FRIGGIN TESTING OVER HERE!!!!!!!!!!*/
-
-
     }
     else {
       System.out.println("Spielbrett kann nicht initialisiert werden.\nSpielbrettgröße muss größer als oder gleich 3 und kleiner als oder gleich 30 sein.\n");
@@ -73,6 +57,7 @@ public class SWRBoard implements Board, Viewable {
   public Status getStatus() {
     return status;
   }//END GETSTATUS
+  //============================================================================
   /**Methode, die die aktuellen Spielerfarbe verändert*/
   public void setCurrentPlayer(PlayerColor color) {
     current = color;
@@ -186,20 +171,44 @@ public class SWRBoard implements Board, Viewable {
     switch (type) {
       case Flower:
         if(current == PlayerColor.Red) {
-          flowerMove(move, redflowerset);
+          if(flowerMove(move, redflowerset)) {
+            nextPlayer();
+            status = Status.Ok;
+          }
+          else {
+            status = Status.Illegal;
+          }
         }
         else {
-          flowerMove(move, blueflowerset);
+          if(flowerMove(move, blueflowerset)) {
+            nextPlayer();
+            status = Status.Ok;
+          }
+          else {
+            status = Status.Illegal;
+          }
         }
           break;
         //END CASE FLOWER-------------------------------------------------------------------------
 
       case Ditch:
         if(current == PlayerColor.Red) {
-          ditchMove(move, redditchset, redflowerset);
+          if(ditchMove(move, redditchset, redflowerset)) {
+            nextPlayer();
+            status = Status.Ok;
+          }
+          else {
+            status = Status.Illegal;
+          }
         }
         else {
-          ditchMove(move, blueditchset, blueflowerset);
+          if(ditchMove(move, blueditchset, blueflowerset)) {
+            nextPlayer();
+            status = Status.Ok;
+          }
+          else {
+            status = Status.Illegal;
+          }
         }
 
         break;
@@ -216,33 +225,221 @@ public class SWRBoard implements Board, Viewable {
         //END CASE SURRENDER-------------------------------------------------------------------------
 
       case End:
+        Collection<Move> possiblemoves = getPossibleMoves();
+        for(Move m : possiblemoves) {
+          if(m.getType() == MoveType.Flower) {
+            status = Status.Illegal;
+            return;
+          }
+        }
         if(getPoints(PlayerColor.Red) > getPoints(PlayerColor.Blue)) {
           status = Status.RedWin;
         }
         else if(getPoints(PlayerColor.Red) < getPoints(PlayerColor.Blue)) {
           status = Status.BlueWin;
         }
-        else {
+        else if(getPoints(PlayerColor.Red) == getPoints(PlayerColor.Blue)){
           status = Status.Draw;
+        }
+        else {
+          status = Status.Illegal;
         }
         break;
         //END CASE END----------------------------------------------------------
 
       default:
         throw new MoveFormatException("Move hatte keinen gültigen Typ.");
-        //^^ ANDERER EXCEPTION TYP VLLT^^ ?!?!?!?
-        //END DEFAULT CASE------------------------------------------------------
-        //HIER NOCH CURRENTPLAYER ÄNDERN???????????????????????????????????????
     }//END SWITCH
 
   }//END MAKE
   //============================================================================
-  /*Methode, die die Menge aller gültigen Züge zurückliefert*/
+  /**Methode um schnell und einfach den naechsten Spieler zu setzen*/
+  private void nextPlayer () {
+    if(current == PlayerColor.Red) {
+      current = PlayerColor.Blue;
+    }
+    else {
+      current = PlayerColor.Red;
+    }
+  }//END NEXTPLAYER
+  //============================================================================
+  /*Methode, die die Menge aller gültigen Züge zurückliefert
+   * author: Yufan Dong
+   */
   public Collection<Move> getPossibleMoves() {
-      System.out.println("getPossibleMoves got called, but it's not yet implemented :(");
 
-      return null;
+            HashSet<Ditch> ditchset = new HashSet<Ditch>();
+            ditchset.addAll(redditchset);
+            ditchset.addAll(blueditchset);
+
+            HashSet<Flower> flowerset = new HashSet<Flower>();
+            // switch(current){
+            //   case Red:   flowerset = redflowerset; break;
+            //   case Blue:  flowerset = blueflowerset; break;
+            // }
+            flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
+
+            HashSet<Flower> allflowerset = new HashSet<Flower>();
+            allflowerset.addAll(redflowerset);
+            allflowerset.addAll(blueflowerset);
+
+            HashSet<Flower> gardenset = new HashSet<Flower>();
+            for(Flower flower : flowerset){
+              for(Field field : fieldset){
+                if(field.equals(flower)){
+                  if(field.getClusteramount() == 4){
+                    gardenset.add(field);
+                  }
+                }
+              }
+            }
+
+          //FLOWER
+            HashSet<Flower> unpossibleF = new HashSet<Flower>();
+
+            //alle besizte Field (red+blue)
+            for(Flower flower : redflowerset)
+              unpossibleF.add(flower);
+            for(Flower flower : blueflowerset)
+              unpossibleF.add(flower);
+
+            //alle nachbarn und ecke von Garten (eigne)
+            for(Flower flower : gardenset){
+              Position[] p =new Position[]{flower.getFirst(),flower.getSecond(),flower.getThird()};
+              for(int i = 0; i<3 ; i++){
+                int a = p[i].getColumn();
+                int b = p[i].getRow();
+                if(a-1>0){
+                ckadFlower(unpossibleF, p[i], new Position(a-1,b),   new Position(a-1,b+1) );
+                ckadFlower(unpossibleF, p[i], new Position(a,b+1),   new Position(a-1,b+1) );}
+                ckadFlower(unpossibleF, p[i], new Position(a,b+1),   new Position(a+1,b) );
+                if(b-1>0){
+                ckadFlower(unpossibleF, p[i], new Position(a+1,b-1), new Position(a+1,b) );
+                ckadFlower(unpossibleF, p[i], new Position(a+1,b-1), new Position(a,b-1) );
+                if(a-1>0)
+                ckadFlower(unpossibleF, p[i], new Position(a-1,b),   new Position(a,b-1) );}
+              }
+            }
+
+            //alle Nachbar von ditch (red+blue)
+            for(Ditch d : ditchset){
+              //(a,b) (c,x)
+              int a = d.getFirst().getColumn();
+              int b = d.getFirst().getRow();
+              int c = d.getSecond().getColumn();
+              int x = d.getSecond().getRow();
+
+              int diff1 = a - c;
+              int diff2 = b - x;
+
+              if      (diff1 == 0){ //a = c, in one column: like "/"
+                if(a-1>0)
+                ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a-1,Math.max(b,x)));
+                ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a+1,Math.min(b,x)));
+              }
+              else if (diff2 == 0){ //b = d, in one row: like "-"
+                ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.min(a,c),b+1));
+                if(b-1>0)
+                ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.max(a,c),b-1));
+              }
+              else {  //diff1 !=0 && diff2 != 0      // like "\"
+                ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a,x));
+                ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(c,b));
+              }
+            }
+
+            HashSet<Move> possibleM = new HashSet<Move>();
+            HashSet<Flower> possibleF = new HashSet<Flower>();
+            possibleF.addAll(fieldset);
+            possibleF.removeAll(unpossibleF);
+            for(Flower f1 : possibleF){
+              for(Flower f2 : possibleF){
+                if (!f1.equals(f2)){
+                  Move m = new Move(f1,f2);
+                  possibleM.add(m);
+                }
+              }
+            }
+
+          //DITCH
+            HashSet<Ditch> possibleD = new HashSet<Ditch>();
+
+            HashSet<Position> points = new HashSet<Position>();
+            for(Flower flower : flowerset){
+              points.add(flower.getFirst());
+              points.add(flower.getSecond());
+              points.add(flower.getThird());
+            }
+
+            HashSet<Position> unPossibleP = new HashSet<Position>();
+            for(Ditch d : ditchset){
+              unPossibleP.add(d.getFirst());
+              unPossibleP.add(d.getSecond());
+            }
+
+            points.retainAll(unPossibleP);
+
+            for(Position p1 : points){
+              for(Position p2 : points){
+                if(!p1.equals(p2)){
+                  int a = p1.getColumn();
+                  int b = p1.getRow();
+                  int c = p2.getColumn();
+                  int d = p2.getRow();
+
+                  int diff1 = Math.abs(a - c);
+                  int diff2 = Math.abs(b - d);
+
+                if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(diff1 == 1 && diff2 == 1)){
+                  if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
+                    Flower f1 = (a-1>0)?(new Flower(p1,p2, new Position(a-1,Math.max(b,d)))):null;
+                    Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
+                    ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
+                  }
+                  else if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
+                    Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
+                    Flower f2 = (b-1>0)?(new Flower(p1,p2, new Position(Math.max(a,c),b-1))):null;
+                    ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
+                  }
+                  else{ // (diff1 == 1 && diff2 == 1)                // like "\"
+                    Flower f1 = new Flower(p1,p2, new Position(a,d));
+                    Flower f2 = new Flower(p1,p2, new Position(c,b));
+                    ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
+                  }
+
+                  // if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
+                  //   possibleD.add(new Ditch(p1,p2));
+                }
+                }
+              }
+            }
+
+              for(Ditch d : possibleD){
+                Move m = new Move(d);
+                possibleM.add(m);
+              }
+
+            //Surrender
+            possibleM.add(new Move(MoveType.Surrender));
+
+            return possibleM;
   }//END GETPOSSIBLEMOVES
+  //============================================================================
+  private void ckadDitch(Collection<Ditch> possibleD ,Collection<Flower> allflowerset ,Flower f1,Flower f2,Position p1,Position p2){
+
+    if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
+      possibleD.add(new Ditch(p1,p2));
+
+  }//END CKADDITCH
+  //======================================================================
+
+  private void ckadFlower(Collection<Flower> list ,Position p1,Position p2,Position p3){
+
+    Flower f = new Flower(p1,p2,p3);
+    if(fieldset.contains(f))
+      list.add(f);
+
+  }//END CKADFLOWER
   //============================================================================
   /**Methode, die die Menge aller Blumen eines Spielers als Hashset zurückgibt*/
   public Collection<Flower> getFlowers(final PlayerColor color) {
@@ -267,32 +464,98 @@ public class SWRBoard implements Board, Viewable {
 
   private boolean flowerMove (Move move, HashSet<Flower> playerflowerset) {//UNCHECKED
 
-      Flower first = move.getFirstFlower();
-      Flower second = move.getSecondFlower();
-      boolean empty = playerflowerset.isEmpty();
-      //^^wird hier init., damit sobald die flowers geaddet werden, das nicht sowieso nicht leer ist!^^
+    Flower first = move.getFirstFlower();
+    Flower second = move.getSecondFlower();
 
-        playerflowerset.add(first); //Schritt Eins aus 'erkennen von gültigen Zügen'
-        playerflowerset.add(second);
-        if(!empty) {
-          if(isFlowerMoveLegal(playerflowerset, first, second)) {
-              status = Status.Ok;
-              for(Field field : fieldset) {//Speichern der farbe in ein feld
-                if(field.equals(first) || field.equals(second)) {
-                  field.setColor(current);
-                }
-              }
-               return true;
-            }
-          else {
-            playerflowerset.remove(first);
-            playerflowerset.remove(second);
-            status = Status.Illegal;
-            return false;
+    if(first == second) {
+      return false;
+    }
+
+    //vv Hier wird die Korrektheit der übergebenen Blumen ueberprueft vv
+    if(!checkFlowerPositions(first) || !checkFlowerPositions(second)) {
+      status = Status.Illegal;
+      return false;
+    }
+
+    boolean empty = playerflowerset.isEmpty();
+    /*^^wird hier initialisiert, da unten sofort die flowers geaddet werden^^
+    daher würde dementsprechend immer true kommen. und das will man ja nicht*/
+
+
+
+    playerflowerset.add(first); //Schritt Eins aus 'erkennen von gültigen Zügen'
+    playerflowerset.add(second);
+    if(!empty) {
+      if(isFlowerMoveLegal(playerflowerset, first, second)) {
+        status = Status.Ok;
+        for(Field field : fieldset) {//Speichern der farbe in ein feld
+          if(field.equals(first) || field.equals(second)) {
+            field.setColor(current);
           }
         }
+        return true;
+      }
+      else {
+        playerflowerset.remove(first);
+        playerflowerset.remove(second);
+        status = Status.Illegal;
+        return false;
+      }
+    }
     return true;
   }//END FLOWERMOVE
+  //============================================================================
+  /**Hilfsmethode für flowerMove, die die korrekte Position überprüft*/
+  private boolean checkFlowerPositions (Flower flower) {
+
+    Position pos1 = flower.getFirst();
+    Position pos2 = flower.getSecond();
+    Position pos3 = flower.getThird();
+
+    //Summe einer Position darf nie size+2 überschreiten!
+    if(!checkPosition(pos1, size) || !checkPosition(pos2, size) || !checkPosition(pos3, size)) {
+      return false;
+    }
+
+    if((pos1.equals(pos2)) || (pos2.equals(pos3)) || (pos3.equals(pos1))) {
+      //hier können nicht zwei positionen verglichen werden, da sind intern eh verscheiden sind!
+      return false;
+    }
+
+    /*vv Wenn einer dieser Graeben ungueltig sein sollte, ist somit auch
+    die Blume ungueltig!*/
+    Ditch one = new Ditch(pos1, pos2);
+    Ditch two = new Ditch(pos2, pos3);
+    Ditch three = new Ditch(pos3, pos1);
+
+    if(checkDitchPositions(one) && checkDitchPositions(two) && checkDitchPositions(three)) {
+      return true;
+    }
+    else {
+      return false;
+    }
+
+  }//END CHECKFLOWERPOSITIONS
+  //============================================================================
+  /**Hilfmethode für checkFlowerPositions, die ueberprueft, ob eine Position
+   * auch wirklich auf dem Brett liegt
+   */
+  private boolean checkPosition(Position pos, int size) {
+
+    int border = size + 2;
+
+    int row = pos.getRow();
+    int column = pos.getColumn();
+    int sum = row + column;
+
+    if(sum > border) {
+      return false;
+    }
+    else {
+      return true;
+    }
+
+  }//END CHECKPOSITION
   //============================================================================
   /**Hilfsmethode für flowerMove. Überprüft teilw. über andere Methoden
    * die Gültigkeit eines Zuges, der Blumen beinhaltet.
@@ -322,7 +585,7 @@ public class SWRBoard implements Board, Viewable {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
       }//Schritte 3-6
-    }//OB DAS GEHT!?!?!??!?!?!!??!!!!!!!!!!!!??????
+    }
 
     //vv schritte 7-10 vv
     for(int i = 2; i < mark; i++) {//schritt 7
@@ -333,8 +596,6 @@ public class SWRBoard implements Board, Viewable {
         }
       }
       if(amount > 4) { //hier schritt 9
-        System.out.println("FlowerMove ist nicht legal");
-        //^^HIER WAHRSCHL LIEBER NE EXCEPTION DIE HOCHGEWORFEN WIRD, ODER?
         cleanUpMarks();
         return false;
       }
@@ -379,7 +640,7 @@ public class SWRBoard implements Board, Viewable {
   }//END CLEANUPMARKS
   //============================================================================
   /**Hilfsmethode für isFlowerMoveLegal, die dafür sorgt, dass Beete sich selbst
-   * und ihre Beet-Nachbarn Markierung
+   * und ihre Beet-Nachbarn in den zusaetzlichen Farben markieren
    */
   private void additionalColoring (Field field, int mark) {//CHECKED
 
@@ -409,10 +670,6 @@ public class SWRBoard implements Board, Viewable {
   private void illegalColoring(Field field) {//UNCHECKED
 
     int mark = field.getMark();
-    /*Field right = null;
-    if(field.getRight() != null) {
-      right = field.getRight();
-    }WIE WÄRS HIERMIT? ODER AUCH WIEDER STRESS WEGEN NULL SPÄTER?*/
 
     //vv wenn ein rechtes feld existiert und nicht dieselbe farbe hat wie es selbst vv
     if(field.getRight() != null) {
@@ -490,30 +747,30 @@ public class SWRBoard implements Board, Viewable {
   private boolean ditchMove (Move move, HashSet<Ditch> playerditchset, HashSet<Flower> playerflowerset) {//UNCHECKED
 
     Ditch ditch = move.getDitch();
-    int flowerconnectioncamount = 0;
+    int flowerconnectioncamount = 0; //um herauszufinden, ob auch wirklich 2 blumen connected sind und nicht leere felder dabei sind
     Position pos1 = ditch.getFirst();
     Position pos2 = ditch.getSecond();
 
 
     if(checkDitchPositions(ditch)) {//länge gecheckt!
-      for(Ditch d : playerditchset) {//checken ob ein anderer ditch dieselbe pos hat
-        if(pos1.equals(d.getFirst()) || pos1.equals(d.getSecond())) {
-          if(pos2.equals(d.getFirst()) || pos2.equals(d.getSecond())) {
+      if(isNeighborEmpty(ditch)) {//FELDER WERDEN GLEICHZEITIG UNFRUCHTBAR GEMACHT!
+        for(Ditch d : playerditchset) {//checken ob ein anderer ditch dieselbe pos hat
+          if(!d.equals(ditch)) {
             for(Flower flower : playerflowerset) {
               if(isDitchConnectedToFlower(ditch, flower)){//zw. 2 Blumen gecheckt!
                 flowerconnectioncamount++;
               }
             }//ENDE FOREACH
+
             if(flowerconnectioncamount > 1) {
-              if(isNeighborEmpty(ditch)) {//FELDER WERDEN GLEICHZEITIG UNFRUCHTBAR GEMACHT!
                 return true;
-              }
             }
           }
         }
       }
     }
-      return false;
+    status = Status.Illegal;
+    return false;
 
   }//END DITCHMOVE
   //============================================================================
@@ -552,7 +809,8 @@ public class SWRBoard implements Board, Viewable {
 
     int differenzColumn = column1 - column2;
 
-
+    /*Die differenz zwischen 2 columns, 2 rows und deren summe dürfen nie mehr
+    als |1| sein*/
 
     int summeCR = differenzRow + differenzColumn;
     if(summeCR < 0) {
@@ -602,7 +860,7 @@ public class SWRBoard implements Board, Viewable {
       }
     }
     for(Field f : markierte) {
-      f.setMark(-2);//NUR HIER MARKIEREN DAMIT DAS AUCH JA KORREKT IST!!!
+      f.setMark(-2);//NUR HIER MARKIEREN DAMIT DAS AUCH JA KORREKT IST!
     }
     return true;
 
@@ -613,7 +871,7 @@ public class SWRBoard implements Board, Viewable {
   public int getPoints(final PlayerColor color) {//UNCHECKED
     HashSet<Flower> playerflowerset;
     HashSet<Ditch> playerditchset;
-    HashSet<Field> gardenset = new HashSet<Field>(); //hier field damit ich mit cluster-x arbeiten kann
+    HashSet<Field> gardenset = new HashSet<Field>(); //hier field damit ich mit cluster-x variablen arbeiten kann
     if(color == PlayerColor.Red) {
       playerflowerset = redflowerset;
       playerditchset = redditchset;
@@ -753,9 +1011,44 @@ public class SWRBoard implements Board, Viewable {
 
     SWRBoard b = new SWRBoard(size);
 
-    /*//checking isNeighborEmpty on empty board
+    int testamount = 0;
 
-    Ditch da = Ditch.parseDitch("{(2,1),(2,2)}");
+    Ditch doa = Ditch.parseDitch("{(5,5),(4,5)}");
+
+    Ditch doe = Ditch.parseDitch("{(4,5),(5,5)}");
+
+    Flower fo = Flower.parseFlower("{(3,6),(3,5),(4,5)}");
+    Flower fa = Flower.parseFlower("{(5,5),(5,4),(6,4)}");
+
+    HashSet<Flower> testset = new HashSet<Flower>();
+
+    testset.add(fo);
+    testset.add(fa);
+
+    for(Flower f : testset) {
+      if(b.isDitchConnectedToFlower(doa, f)) {
+        testamount++;
+      }
+    }
+
+    System.out.println(testamount);
+
+  /*  HashSet<Ditch> testset = new HashSet<Ditch>();
+
+    testset.add(doa);
+
+    for(Ditch d : testset) {
+      if(d.equals(doe)) {
+        System.out.println("true");
+      }
+    }*/
+
+    //System.out.println(b.checkDitchPositions(doe));
+
+
+    //checking isNeighborEmpty on empty board
+
+    /*Ditch da = Ditch.parseDitch("{(2,1),(2,2)}");
     Ditch doe = Ditch.parseDitch("{(1,1),(2,2)}");
     Ditch dae = Ditch.parseDitch("{(1,1),(1,2)}");
 
