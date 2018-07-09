@@ -241,17 +241,15 @@ public class SWRBoard implements Board, Viewable {
 
     public Collection<Move> getPossibleMoves() {
 
-        HashSet<Ditch> DitchSet = new HashSet<Ditch>();
-        DitchSet.addAll(redditchset);
-        DitchSet.addAll(blueditchset);
+        HashSet<Ditch> ditchset = new HashSet<Ditch>();
+        ditchset.addAll(redditchset);
+        ditchset.addAll(blueditchset);
 
         HashSet<Flower> flowerset = new HashSet<Flower>();
-
         // switch(current){
         //   case Red:   flowerset = redflowerset; break;
         //   case Blue:  flowerset = blueflowerset; break;
         // }
-
         flowerset = (current == Red)?redflowerset:blueflowerset;
 
         HashSet<Flower> allflowerset = new HashSet<Flower>();
@@ -297,7 +295,7 @@ public class SWRBoard implements Board, Viewable {
         }
 
         //alle Nachbar von ditch (red+blue)
-        for(Ditch d : DitchSet){
+        for(Ditch d : ditchset){
           //(a,b) (c,d)
           int a = d.getFirst().getColumn();
           int b = d.getFirst().getRow();
@@ -344,6 +342,14 @@ public class SWRBoard implements Board, Viewable {
           points.add(flower.getSecond());
           points.add(flower.getThird());
         }
+        
+        HashSet<Position> unPossibleP = new HashSet<Position>(); 
+        for(Ditch d : ditchset){
+          unPossibleP.add(d.getFirst());
+          unPossibleP.add(d.getSecond());
+        }
+
+        points.retainAll(unPossibleP);
 
         for(Position p1 : points){
           for(Position p2 : points){
@@ -356,25 +362,27 @@ public class SWRBoard implements Board, Viewable {
               int diff1 = Math.abs(a - c);
               int diff2 = Math.abs(b - d);
 
+            if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(diff1 == 1 && diff2 == 1)){
               if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
                 if(a-1>0)
                 Flower f1 = new Flower(p1,p2, new Position(a-1,Math.max(b,d)));
                 else Flower f1 = new Flower();
                 Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
               }
-              if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
+              else if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
                 Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
                 if(b-1>0)
                 Flower f2 = new Flower(p1,p2, new Position(Math.max(a,c),b-1));
                 else Flower f2 = new Flower();
               }
-              if (diff1 == 1 && diff2 == 1) {               // like "\"
+              else{ // (diff1 == 1 && diff2 == 1)                // like "\"
                 Flower f1 = new Flower(p1,p2, new Position(a,d));
                 Flower f2 = new Flower(p1,p2, new Position(c,b));
               }
 
               if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
                 possibleD.add(new Ditch(p1,p2));
+            }
             }
           }
         }
