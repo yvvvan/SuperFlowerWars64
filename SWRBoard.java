@@ -273,10 +273,6 @@ public class SWRBoard implements Board, Viewable {
             ditchset.addAll(blueditchset);
 
             HashSet<Flower> flowerset = new HashSet<Flower>();
-            // switch(current){
-            //   case Red:   flowerset = redflowerset; break;
-            //   case Blue:  flowerset = blueflowerset; break;
-            // }
             flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
 
             HashSet<Flower> allflowerset = new HashSet<Flower>();
@@ -293,6 +289,25 @@ public class SWRBoard implements Board, Viewable {
                 }
               }
             }
+            
+            HashSet<Field> beet3set = new HashSet<Field>();
+            for(Flower flower : flowerset){
+              for(Field field : fieldset){
+                if(field.equals(flower)){
+                  if(field.getClusteramount() == 3){
+                    beet3set.add(field);
+                  }
+                }
+              }
+            }
+            
+            HashSet<Field> beetNachbarnset = new HashSet<Field>();
+            for(Field flower : beet3set){
+                beetNachbarnset.add(flower.getLeft());
+                beetNachbarnset.add(flower.getRight());
+                beetNachbarnset.add(flower.getVertical());
+            }
+            beetNachbarnset.removeAll(beet3set);
 
           //FLOWER
             HashSet<Flower> unpossibleF = new HashSet<Flower>();
@@ -354,7 +369,7 @@ public class SWRBoard implements Board, Viewable {
             possibleF.removeAll(unpossibleF);
             for(Flower f1 : possibleF){
               for(Flower f2 : possibleF){
-                if (!f1.equals(f2)){
+                if (!f1.equals(f2) && ((beetNachbarnset.contains(f1)&&!beetNachbarnset.contains(f2))||(!beetNachbarnset.contains(f1)&&beetNachbarnset.contains(f2))||(!beetNachbarnset.contains(f1)&&!beetNachbarnset.contains(f2)))){
                   Move m = new Move(f1,f2);
                   possibleM.add(m);
                 }
@@ -377,7 +392,7 @@ public class SWRBoard implements Board, Viewable {
               unPossibleP.add(d.getSecond());
             }
 
-            points.retainAll(unPossibleP);
+            points.removeAll(unPossibleP);
 
             for(Position p1 : points){
               for(Position p2 : points){
