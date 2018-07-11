@@ -19,7 +19,7 @@ public class MyViewer implements Viewer {
        }
 
        public PlayerColor getTurn() {
-           return turnColor;
+           return gameboard.getCurrentPlayer();
        }
 
        public int getSize() {
@@ -27,7 +27,7 @@ public class MyViewer implements Viewer {
        }
 
        public Status getStatus() {
-           return state;
+           return gameboard.getStatus();
        }
 
        public int getNeighborAmount(Flower flower) {
@@ -35,13 +35,11 @@ public class MyViewer implements Viewer {
        }
 
        public Collection<Flower> getFlowers(final PlayerColor color) {
-           LinkedList<Flower> flowers = new LinkedList<>();
-           return flowers;
+           return gameboard.getFlowers(color);
        }
 
        public Collection<Ditch> getDitches(final PlayerColor color) {
-            LinkedList<Ditch> ditches = new LinkedList<>();
-            return ditches;
+            return gameboard.getDitches(color);
        }
 
        public Collection<Move> getPossibleMoves() {
