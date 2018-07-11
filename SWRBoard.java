@@ -434,11 +434,22 @@ public class SWRBoard implements Board, Viewable {
   //======================================================================
 
   private void ckadFlower(Collection<Flower> list ,Position p1,Position p2,Position p3){
-
-    Flower f = new Flower(p1,p2,p3);
-    if(fieldset.contains(f))
-      list.add(f);
-
+    if((p1!=p2)&&(p2!=p3)&&(p3!=p1)){
+        Position[] p = new Position[]{p1,p2,p3};
+        boolean onBoard = true;
+        for(int i = 0; i<3; i++){
+            int a = p[i].getColumn();
+            int b = p[i].getRow();
+            if(a<0 || b<0 ||(a+b)>size+1){
+                onBoard = false;
+            }
+        }
+        if(onBoard){
+            Flower f = new Flower(p1,p2,p3);
+            if(fieldset.contains(f))
+            list.add(f);
+        }
+    }
   }//END CKADFLOWER
   //============================================================================
   /**Methode, die die Menge aller Blumen eines Spielers als Hashset zurückgibt*/
