@@ -5,6 +5,7 @@ import java.util.*;
 
 /**
 * Klasse, die das Spielbrett intern realisiert
+* SWRBoard ueberprueft die Legalitaet eines Zuges, uebernimmt ihn ggf.
 *
 * @author Maximilian Schlensog
 */
@@ -16,20 +17,20 @@ public class SWRBoard implements Board, Viewable {
   private Status status;
   /**Aktueller Spieler*/
   private PlayerColor current = PlayerColor.Red;
-  /**Interner Speicher für rote Flower-menge*/
+  /**Interner Speicher fuer rote Flower-menge*/
   private HashSet<Flower> redflowerset;
-  /**Interner Speicher für blaue Flower-menge*/
+  /**Interner Speicher fuer blaue Flower-menge*/
   private HashSet<Flower> blueflowerset;
-  /**Interner Speicher für einzelne Felder auf dem Brett*/
+  /**Interner Speicher fuer einzelne Felder auf dem Brett*/
   private HashSet<Field> fieldset;
-  /**Interner Speicher für moegliche Zuege*/
+  /**Interner Speicher fuer moegliche Zuege*/
   private HashSet<Move> moveset;
-  /**Interner Speicher für rote Graeben-menge*/
+  /**Interner Speicher fuer rote Graeben-menge*/
   private HashSet<Ditch> redditchset;
-  /**Interner Speicher für blaue Graeben-menge*/
+  /**Interner Speicher fuer blaue Graeben-menge*/
   private HashSet<Ditch> blueditchset;
 
-  /**Konstruktor, der die Größe des Feldes (in Dreieckskanten) übergeben bekommt*/
+  /**Konstruktor, der die Groeße des Feldes (in Dreieckskanten) uebergeben bekommt*/
   public SWRBoard(int size) {
     if(size >= 3 && size <= 30) {
       this.size = size;
@@ -44,26 +45,26 @@ public class SWRBoard implements Board, Viewable {
       status = Status.Ok;
     }
     else {
-      System.out.println("Spielbrett kann nicht initialisiert werden.\nSpielbrettgröße muss größer als oder gleich 3 und kleiner als oder gleich 30 sein.\n");
+      System.out.println("Spielbrett kann nicht initialisiert werden.\nSpielbrettgroeße muss groeßer als oder gleich 3 und kleiner als oder gleich 30 sein.\n");
     }
   }//END SWRBOARD-CONSTRUCTOR
   //============================================================================
-  /**Methode, die den aktuellen Spieler zurückgibt*/
+  /**Methode, die den aktuellen Spieler zurueckgibt*/
   public PlayerColor getCurrentPlayer() {
     return current;
   }//END GETCURRENTPLAYER
   //============================================================================
-  /**Methode, die den aktuellen Status zurückgibt*/
+  /**Methode, die den aktuellen Status zurueckgibt*/
   public Status getStatus() {
     return status;
   }//END GETSTATUS
   //============================================================================
-  /**Methode, die die aktuellen Spielerfarbe verändert*/
+  /**Methode, die die aktuellen Spielerfarbe veraendert*/
   public void setCurrentPlayer(PlayerColor color) {
     current = color;
   }//END SETCURRENTPLAYER
   //============================================================================
-  /**Konstruktor für den Viewer auf dem Brett*/
+  /**Konstruktor fuer den Viewer auf dem Brett*/
   @Override
   public Viewer viewer() {
 
@@ -71,12 +72,12 @@ public class SWRBoard implements Board, Viewable {
 
   }//END VIEWER
   //============================================================================
-  /**Methode, die die Größe des Bretts zurückgibt*/
+  /**Methode, die die Groeße des Bretts zurueckgibt*/
   public int getSize () {
     return size;
   }//END GETSIZE
   //============================================================================
-  /**Methode, die die Anzahl der Nachbarn einer Blume oder eines Feldes zurückgibt*/
+  /**Methode, die die Anzahl der Nachbarn einer Blume oder eines Feldes zurueckgibt*/
   public int getNeighborAmount (Flower flower) {//CHECKED
 
     for(Field field : fieldset) {
@@ -87,7 +88,7 @@ public class SWRBoard implements Board, Viewable {
     return 0;
   }//END GETNEIGHBORAMOUNT
   //============================================================================
-  /**Hilfsmethode für die Initialisierung des Spielbretts mit Spielfeldern.
+  /**Hilfsmethode fuer die Initialisierung des Spielbretts mit Spielfeldern.
    * Diese Methode konstruiert Felder die aufrecht stehen.
    */
   private Field fieldconstructor(int i, int j, Collection<Field> coll) {//CHECKED
@@ -105,7 +106,7 @@ public class SWRBoard implements Board, Viewable {
 
   }//END FIELDCONSTRUCTOR
   //============================================================================
-  /**Hilfsmethode für die Initialisierung des Spielbretts mit Spielfeldern.
+  /**Hilfsmethode fuer die Initialisierung des Spielbretts mit Spielfeldern.
    * Diese Methode konstruiert Felder die umgekehrt stehen.
    */
   private Field invertedfieldconstructor(int i, int j, Collection<Field> coll) {//CHECKED
@@ -155,62 +156,55 @@ public class SWRBoard implements Board, Viewable {
 
   }//END INVERTEDFIELDCONSTRUCTOR
   //============================================================================
-  /**Methode, die die Verarbeitung von Zügen übernimmt und unter Umständen
+  /**Methode, die die Verarbeitung von Zuegen uebernimmt und unter Umstaenden
    * an weitere Methoden weitergibt.
    */
   @Override
   public void make(final Move move) throws IllegalStateException {//UNCHECKED
     MoveType type = move.getType();
 
+    HashSet<Flower> playerflowers;
+    if(current == PlayerColor.Red) {
+      playerflowers = redflowerset;
+    }
+    else {
+      playerflowers = blueflowerset;
+    }
+
+    HashSet<Ditch> playerditches;
+    if(current == PlayerColor.Red) {
+      playerditches = redditchset;
+    }
+    else {
+      playerditches = blueditchset;
+    }
+
     if(status == Status.RedWin || status == Status.BlueWin || status == Status.Draw || status == Status.Illegal) {
       throw new IllegalStateException("Illegal");
-      /*System.out.println("Spiel vorbei. Es dürfen keine weiteren Züge gemacht werden.");
+      /*System.out.println("Spiel vorbei. Es duerfen keine weiteren Zuege gemacht werden.");
       return;*/
     }
 
     switch (type) {
       case Flower:
-        if(current == PlayerColor.Red) {
-          if(flowerMove(move, redflowerset)) {
+          if(flowerMove(move, playerflowers)) {
             nextPlayer();
             status = Status.Ok;
           }
           else {
             status = Status.Illegal;
           }
-        }
-        else {
-          if(flowerMove(move, blueflowerset)) {
-            nextPlayer();
-            status = Status.Ok;
-          }
-          else {
-            status = Status.Illegal;
-          }
-        }
           break;
         //END CASE FLOWER-------------------------------------------------------------------------
 
       case Ditch:
-        if(current == PlayerColor.Red) {
-          if(ditchMove(move, redditchset, redflowerset)) {
-            nextPlayer();
-            status = Status.Ok;
-          }
-          else {
-            status = Status.Illegal;
-          }
+        if(ditchMove(move, playerditches, playerflowers)) {
+          nextPlayer();
+          status = Status.Ok;
         }
         else {
-          if(ditchMove(move, blueditchset, blueflowerset)) {
-            nextPlayer();
-            status = Status.Ok;
-          }
-          else {
-            status = Status.Illegal;
-          }
+          status = Status.Illegal;
         }
-
         break;
         //END CASE DITCH-------------------------------------------------------------------------
 
@@ -248,7 +242,7 @@ public class SWRBoard implements Board, Viewable {
         //END CASE END----------------------------------------------------------
 
       default:
-        throw new MoveFormatException("Move hatte keinen gültigen Typ.");
+        throw new MoveFormatException("Move hatte keinen gueltigen Typ.");
     }//END SWITCH
 
   }//END MAKE
@@ -467,7 +461,7 @@ public class SWRBoard implements Board, Viewable {
  }//END CKADFLOWER
 
   //============================================================================
-  /**Methode, die die Menge aller Blumen eines Spielers als Hashset zurückgibt*/
+  /**Methode, die die Menge aller Blumen eines Spielers als Hashset zurueckgibt*/
   public Collection<Flower> getFlowers(final PlayerColor color) {
     if(color == PlayerColor.Red) {
       return redflowerset;
@@ -477,7 +471,7 @@ public class SWRBoard implements Board, Viewable {
     }
   }//END GETFLOWERS
   //============================================================================
-  /**Methode, die die Menge aller Gräben eines Spielers als Hashset zurückgibt*/
+  /**Methode, die die Menge aller Graeben eines Spielers als Hashset zurueckgibt*/
   public Collection<Ditch> getDitches(final PlayerColor color) {
     if(color == PlayerColor.Red) {
       return redditchset;
@@ -493,23 +487,24 @@ public class SWRBoard implements Board, Viewable {
     Flower first = move.getFirstFlower();
     Flower second = move.getSecondFlower();
 
-    if(first == second) {
+    if(playerflowerset.contains(first) || playerflowerset.contains(second)) {
       return false;
     }
 
-    //vv Hier wird die Korrektheit der übergebenen Blumen ueberprueft vv
+    if(first.equals(second)) {
+      return false;
+    }
+
+    //vv Hier wird die Korrektheit der uebergebenen Blumen ueberprueft vv
     if(!checkFlowerPositions(first) || !checkFlowerPositions(second)) {
-      status = Status.Illegal;
       return false;
     }
 
     boolean empty = playerflowerset.isEmpty();
     /*^^wird hier initialisiert, da unten sofort die flowers geaddet werden^^
-    daher würde dementsprechend immer true kommen. und das will man ja nicht*/
+    daher wuerde dementsprechend immer true kommen. und das will man ja nicht*/
 
-
-
-    playerflowerset.add(first); //Schritt Eins aus 'erkennen von gültigen Zügen'
+    playerflowerset.add(first); //Schritt Eins aus 'erkennen von gueltigen Zuegen'
     playerflowerset.add(second);
     if(!empty) {
       if(isFlowerMoveLegal(playerflowerset, first, second)) {
@@ -524,27 +519,25 @@ public class SWRBoard implements Board, Viewable {
       else {
         playerflowerset.remove(first);
         playerflowerset.remove(second);
-        status = Status.Illegal;
         return false;
       }
     }
     return true;
   }//END FLOWERMOVE
   //============================================================================
-  /**Hilfsmethode für flowerMove, die die korrekte Position überprüft*/
+  /**Hilfsmethode fuer flowerMove, die die korrekte Position ueberprueft*/
   private boolean checkFlowerPositions (Flower flower) {
 
     Position pos1 = flower.getFirst();
     Position pos2 = flower.getSecond();
     Position pos3 = flower.getThird();
 
-    //Summe einer Position darf nie size+2 überschreiten!
+    //Summe einer Position darf nie size+2 ueberschreiten!
     if(!checkPosition(pos1, size) || !checkPosition(pos2, size) || !checkPosition(pos3, size)) {
       return false;
     }
 
     if((pos1.equals(pos2)) || (pos2.equals(pos3)) || (pos3.equals(pos1))) {
-      //hier können nicht zwei positionen verglichen werden, da sind intern eh verscheiden sind!
       return false;
     }
 
@@ -563,11 +556,11 @@ public class SWRBoard implements Board, Viewable {
 
   }//END CHECKFLOWERPOSITIONS
   //============================================================================
-  /**Hilfmethode für checkFlowerPositions, die ueberprueft, ob eine Position
+  /**Hilfsmethode fuer checkFlowerPositions, die ueberprueft, ob eine Position
    * auch wirklich auf dem Brett liegt
    */
   private boolean checkPosition(Position pos, int size) {
-
+    //Summe einer Position darf nie size+2 ueberschreiten!
     int border = size + 2;
 
     int row = pos.getRow();
@@ -583,16 +576,15 @@ public class SWRBoard implements Board, Viewable {
 
   }//END CHECKPOSITION
   //============================================================================
-  /**Hilfsmethode für flowerMove. Überprüft teilw. über andere Methoden
-   * die Gültigkeit eines Zuges, der Blumen beinhaltet.
+  /**Hilfsmethode fuer flowerMove. Überprueft teilw. ueber andere Methoden
+   * die Gueltigkeit eines Zuges, der Blumen beinhaltet.
    */
   private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset, Flower first, Flower second) {
     //UNCHECKED
 
-
-    int mark = 1; //1 = grau, andere ints sind andere farben für die felder
-    int amount = 0; // für schritt 7
-    //-vv Alle flowers kriegen eine graue Färbung vv----------------------------
+    int mark = 1; //1 = grau, andere ints sind andere farben fuer die felder
+    int amount = 0; // fuer schritt 7
+    //-vv Alle flowers kriegen eine graue Faerbung vv----------------------------
     for(Flower flower : playerflowerset) {
       for(Field field : fieldset) {
         if(field.equals(flower)) {
@@ -606,7 +598,7 @@ public class SWRBoard implements Board, Viewable {
         }
       }
     }
-    //-vv Alle felder mit einer grauen Färbung färben sich und ihre grauen Nachbarn rekursiv
+    //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv
     for(Field f : fieldset) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
@@ -626,7 +618,7 @@ public class SWRBoard implements Board, Viewable {
         return false;
       }
 
-      // vv Schritt 10-1 (färben)
+      // vv Schritt 10-1 (faerben)
       if(amount == 4) {
         for(Field f : fieldset) {
           if(f.getMark() == i) {
@@ -634,14 +626,14 @@ public class SWRBoard implements Board, Viewable {
           }
         }
       }
-      // vv Schritt 10-2 (überprüfen)
+      // vv Schritt 10-2 (ueberpruefen)
       for(Field f : fieldset) {
         if(f.equals(first) || f.equals(second)) {
           if(f.getMark() == -1) {
             cleanUpMarks();
             return false;
           }
-          if(f.getMark() == i) {//Rückspeichern von größe des Gartens
+          if(f.getMark() == i) {//Rueckspeichern von groeße des Gartens
             f.setClusteramount(amount);
           }
         }
@@ -665,7 +657,7 @@ public class SWRBoard implements Board, Viewable {
 
   }//END CLEANUPMARKS
   //============================================================================
-  /**Hilfsmethode für isFlowerMoveLegal, die dafür sorgt, dass Beete sich selbst
+  /**Hilfsmethode fuer isFlowerMoveLegal, die dafuer sorgt, dass Beete sich selbst
    * und ihre Beet-Nachbarn in den zusaetzlichen Farben markieren
    */
   private void additionalColoring (Field field, int mark) {//CHECKED
@@ -690,8 +682,8 @@ public class SWRBoard implements Board, Viewable {
 
   }//END ADDITIONALCOLORING
   //============================================================================
-  /**Hilfsmethode für isFlowerMoveLegal, die Nachbarfelder von Gärten markiert,
-   * sodass diese nicht bebaut werden dürfen
+  /**Hilfsmethode fuer isFlowerMoveLegal, die Nachbarfelder von Gaerten markiert,
+   * sodass diese nicht bebaut werden duerfen
    */
   private void illegalColoring(Field field) {//UNCHECKED
 
@@ -706,8 +698,9 @@ public class SWRBoard implements Board, Viewable {
         if(field.getRight().getVertical() != null) {
           if(field.getRight().getVertical().getMark() != mark) {
             field.getRight().getVertical().setMark(-1);
-          }
-        }
+          }//dann bekommt es die extra markierung -1, die aussagt, dass es nicht...
+        }//...bebaut werden darf, da hier ein Garten ist
+        //vv hier nochmal fuer rechten und oberen Nachbarn vv
         if(field.getRight().getRight() != null) {
           if(field.getRight().getRight().getMark() != mark) {
             field.getRight().getRight().setMark(-1);
@@ -767,7 +760,7 @@ public class SWRBoard implements Board, Viewable {
 
   }//END ILLEGALCOLORING
   //============================================================================
-  /**Methode, die die Verarbeitung von Zügen übernimmt, die einen Graben
+  /**Methode, die die Verarbeitung von Zuegen uebernimmt, die einen Graben
    * setzen
    */
   private boolean ditchMove (Move move, HashSet<Ditch> playerditchset, HashSet<Flower> playerflowerset) {//UNCHECKED
@@ -778,7 +771,7 @@ public class SWRBoard implements Board, Viewable {
     Position pos2 = ditch.getSecond();
 
 
-    if(checkDitchPositions(ditch)) {//länge gecheckt!
+    if(checkDitchPositions(ditch)) {//laenge gecheckt!
       if(isNeighborEmpty(ditch)) {//FELDER WERDEN GLEICHZEITIG UNFRUCHTBAR GEMACHT!
         for(Ditch d : playerditchset) {//checken ob ein anderer ditch dieselbe pos hat
           if(!d.equals(ditch)) {
@@ -800,7 +793,7 @@ public class SWRBoard implements Board, Viewable {
 
   }//END DITCHMOVE
   //============================================================================
-  /**Hilfsmethode für ditchMove. Überprüft, ob eine Blume eine Position
+  /**Hilfsmethode fuer ditchMove. Überprueft, ob eine Blume eine Position
    * mit dem Graben gemeinsam hat, und somit mit ihm verbunden ist.
    */
   public boolean isDitchConnectedToFlower (Ditch ditch, Flower flower) {//UNCHECKED
@@ -821,8 +814,8 @@ public class SWRBoard implements Board, Viewable {
     return false;
   }//END ISDITCHCONNECTEDTOFLOWER
   //============================================================================
-  /**Hilfsmethode für ditchMove, die die Gültigkeit der Position eines über-
-   * gebenen Graben überprüft.
+  /**Hilfsmethode fuer ditchMove, die die Gueltigkeit der Position eines ueber-
+   * gebenen Graben ueberprueft.
    */
   private boolean checkDitchPositions (Ditch ditch) {//CHECKED
 
@@ -835,14 +828,14 @@ public class SWRBoard implements Board, Viewable {
 
     int differenzColumn = column1 - column2;
 
-    /*Die differenz zwischen 2 columns, 2 rows und deren summe dürfen nie mehr
+    /*Die differenz zwischen 2 columns, 2 rows und deren summe duerfen nie mehr
     als |1| sein*/
 
     int summeCR = differenzRow + differenzColumn;
     if(summeCR < 0) {
       summeCR *= -1;
     }
-    if(differenzRow < 0) { //in betrag machen,damit kein umständl. zeug später
+    if(differenzRow < 0) { //in betrag machen,damit kein umstaendl. zeug spaeter
       differenzRow *= -1;
     }
     if(differenzColumn < 0) {
@@ -856,13 +849,13 @@ public class SWRBoard implements Board, Viewable {
 
   }//END CHECKDITCHPOSTIONS
   //============================================================================
-  /**Hilfsmethode für ditchMove. Überprüft, ob die angrenzenden Felder
+  /**Hilfsmethode fuer ditchMove. Überprueft, ob die angrenzenden Felder
    * unbebaut sind.
    */
   public boolean isNeighborEmpty (Ditch ditch) {//ONLY CHECKED ON EMPTY FIELD! BUT CAN ONLY CHECK ONCE FLOWER-STUFF IS CHECKED TOO!
 
     if(!checkDitchPositions(ditch)) {
-      System.out.println("Graben hat ungültige Dimensionen:");
+      System.out.println("Graben hat ungueltige Dimensionen:");
       return false;
     }
 
@@ -893,7 +886,7 @@ public class SWRBoard implements Board, Viewable {
 
   }//END ISNEIGHBOREMPTY
   //============================================================================
-  /**Methode, die die Punktzahl des übergebenen Spielers zurückgibt*/
+  /**Methode, die die Punktzahl des uebergebenen Spielers zurueckgibt*/
   public int getPoints(final PlayerColor color) {//UNCHECKED
     HashSet<Flower> playerflowerset;
     HashSet<Ditch> playerditchset;
@@ -908,7 +901,7 @@ public class SWRBoard implements Board, Viewable {
     }
     int points = 0;
     int mark = 1; //1 = grau, andere ints siehe Field-Klasse unter clustermark
-    //-vv Alle flowers kriegen eine graue Färbung vv----------------------------
+    //-vv Alle flowers kriegen eine graue Faerbung vv----------------------------
     for(Flower flower : playerflowerset) {
       for(Field field : fieldset) {
         if(field.equals(flower)) {
@@ -919,7 +912,7 @@ public class SWRBoard implements Board, Viewable {
         }
       }
     }
-    //-vv Alle felder mit einer grauen Färbung färben sich und ihre grauen Nachbarn rekursiv vv
+    //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv vv
     for(Field f : fieldset) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
@@ -935,7 +928,7 @@ public class SWRBoard implements Board, Viewable {
     return points;
   }//END GETPOINTS
   //============================================================================
-  /**Hilfsmethode für getPoints.*/
+  /**Hilfsmethode fuer getPoints.*/
   private int countingN (Field field, HashSet<Ditch> playerditchset) {//UNCHECKED
     //NUR MIT GARDENSET SACHEN AUFRUFEN!
     int anzahl = 0;
@@ -964,12 +957,12 @@ public class SWRBoard implements Board, Viewable {
     return anzahl;
   }//END COUNTINGN
   //============================================================================
-  /**Hilfsmethode für countingN. Alle Felder in demselben Garten wie das auf-
-  rufende Feld 'sammeln' alle Gräben ein und checken sich selbst ab*/
+  /**Hilfsmethode fuer countingN. Alle Felder in demselben Garten wie das auf-
+  rufende Feld 'sammeln' alle Graeben ein und checken sich selbst ab*/
   private void checkYourGarden (Field field, HashSet<Ditch> tobecheckedset, HashSet<Ditch> playerditchset) {
     //UNCHECKED
     field.setCheck(true);
-      //vv hierfür brauch ich die Färbung aus getPoints! vv
+      //vv hierfuer brauch ich die Faerbung aus getPoints! vv
     if(field.getRight() != null) {
       if(field.getRight().getMark() == field.getMark()) {
         if(!field.getRight().getCheck()) {
@@ -998,7 +991,7 @@ public class SWRBoard implements Board, Viewable {
     }
   }//END CHECKYOURGARDEN
   //============================================================================
-  /**Hilfsmethode für getPoints. Berechnet die Punkte eines Garten-
+  /**Hilfsmethode fuer getPoints. Berechnet die Punkte eines Garten-
   konglomerats auf Basis der in den Regeln festgelegten Weise*/
   private int p (int n) {//CHECKED
 
@@ -1009,17 +1002,17 @@ public class SWRBoard implements Board, Viewable {
 
   }//END P
   //============================================================================
-  /**Hilfsmethode für countingN. addiert alle Felder an dem
-   * übergebenen Graben ins tobecheckedfields-set, wenn diese noch
+  /**Hilfsmethode fuer countingN. addiert alle Felder an dem
+   * uebergebenen Graben ins tobecheckedfields-set, wenn diese noch
    * nicht checkYourGarden aufriefen.
    */
   private void findFields (Ditch ditch, HashSet<Field> tobecheckedfields) {//UNCHECKED
 
     /*Hier kommen alle Felder rein, die auf der anderen Seite liegen.
-      Denn Felder , die auf der anderen Seite liegen, müssen keine Nachbarn sein.
-      Es können genauso gut Blumenbeete sein, die über Eck zsmliegen.
-      Wenn also der countingN aufruf auf NUR EIN Feld ginge, würden nicht
-      alle verbindungen überprüft. Trotzdem verhindert countingN mehrfache
+      Denn Felder , die auf der anderen Seite liegen, muessen keine Nachbarn sein.
+      Es koennen genauso gut Blumenbeete sein, die ueber Eck zsmliegen.
+      Wenn also der countingN aufruf auf NUR EIN Feld ginge, wuerden nicht
+      alle verbindungen ueberprueft. Trotzdem verhindert countingN mehrfache
       Aufrufe auf denselben Ditch!*/
 
       for(Field f : fieldset) {
