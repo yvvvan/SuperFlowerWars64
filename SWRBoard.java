@@ -367,7 +367,7 @@ public class SWRBoard implements Board, Viewable {
            possibleF.removeAll(unpossibleF);
            for(Flower f1 : possibleF){
              for(Flower f2 : possibleF){
-               if (!f1.equals(f2) && (!beetNachbarnset.contains(f1)||!beetNachbarnset.contains(f2)){
+               if (!f1.equals(f2) && (!beetNachbarnset.contains(f1)||!beetNachbarnset.contains(f2))){
                  Move m = new Move(f1,f2);
                  possibleM.add(m);
                }
