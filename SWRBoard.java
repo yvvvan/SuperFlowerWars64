@@ -266,11 +266,12 @@ public class SWRBoard implements Board, Viewable {
   /*Methode, die die Menge aller gültigen Züge zurückliefert
    * author: Yufan Dong
    */
-   public Collection<Move> getPossibleMoves() {
+     public Collection<Move> getPossibleMoves() {
 
            HashSet<Ditch> ditchset = new HashSet<Ditch>();
-           ditchset.addAll(redditchset);
-           ditchset.addAll(blueditchset);
+            ditchset.addAll(redditchset);
+            ditchset.addAll(blueditchset);
+
 
            HashSet<Flower> flowerset = new HashSet<Flower>();
            flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
@@ -403,7 +404,7 @@ public class SWRBoard implements Board, Viewable {
                  int diff1 = Math.abs(a - c);
                  int diff2 = Math.abs(b - d);
 
-               if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(diff1 == 1 && diff2 == 1)){
+               if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(a-c==d-b)){
                  if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
                    Flower f1 = (a-1>0)?(new Flower(p1,p2, new Position(a-1,Math.max(b,d)))):null;
                    Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
@@ -464,6 +465,7 @@ public class SWRBoard implements Board, Viewable {
        }
    }
  }//END CKADFLOWER
+
   //============================================================================
   /**Methode, die die Menge aller Blumen eines Spielers als Hashset zurückgibt*/
   public Collection<Flower> getFlowers(final PlayerColor color) {
