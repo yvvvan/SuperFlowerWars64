@@ -1,0 +1,42 @@
+<project name = "Gameboard" default = "main">
+	<property name = "build.dir" location = "build/classes"/>
+	<property name = "src.dir" location = "."/>
+
+	<target name = "compile">
+		<mkdir dir = "${build.dir}"/>
+		<javac
+			srcdir = "${src.dir}"
+			destdir = "${build.dir}"
+			includeantruntime = "false"
+		/>
+	</target>
+
+	<target name = "doc" depends = "compile">
+		<mkdir dir = "API"/>
+		<javadoc
+			sourcepath = "${src.dir}"
+			destdir = "API"
+			Private = "true"
+			Author = "true"
+			packagenames = "app.gameboard.*, app.testing.*"
+			charset = "UTF-8"
+			>
+			<fileset dir = "${src.dir}">
+            	<include name = "**/*.java"/>
+            </fileset>
+		</javadoc>
+	</target>
+
+	<target name="run" depends="compile">
+		<java
+			fork = "true"
+			classpath = "${build.dir}"
+			classname = "app.testing.TestGameboard"
+			>
+			<arg value="3"/>
+	   </java>
+   </target>
+
+   <target name = "main" depends = "doc,run"/>
+
+</project>
