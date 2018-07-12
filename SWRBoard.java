@@ -4,9 +4,10 @@ import flowerwarspp.preset.*;
 import java.util.*;
 
 /**
-* Klasse, die das Spielbrett intern realisiert
+* Klasse, die das Spielbrett intern realisiert.
 * SWRBoard ueberprueft die Legalitaet eines Zuges, uebernimmt ihn ggf.
-*
+* Regeln und Vorraussetzungen basierend auf dem Projekt "Flowerwars" des
+* allgemeinen Programmier Praktikums, Sommersemester 2018
 * @author Maximilian Schlensog
 */
 public class SWRBoard implements Board, Viewable {
@@ -164,22 +165,18 @@ public class SWRBoard implements Board, Viewable {
     MoveType type = move.getType();
 
     HashSet<Flower> playerflowers;
+    HashSet<Ditch> playerditches;
+
     if(current == PlayerColor.Red) {
       playerflowers = redflowerset;
-    }
-    else {
-      playerflowers = blueflowerset;
-    }
-
-    HashSet<Ditch> playerditches;
-    if(current == PlayerColor.Red) {
       playerditches = redditchset;
     }
     else {
+      playerflowers = blueflowerset;
       playerditches = blueditchset;
     }
 
-    if(status == Status.RedWin || status == Status.BlueWin || status == Status.Draw || status == Status.Illegal) {
+    if(status == Status.RedWin || status == Status.BlueWin || status == Status.Draw) {
       throw new IllegalStateException("Illegal");
       /*System.out.println("Spiel vorbei. Es duerfen keine weiteren Zuege gemacht werden.");
       return;*/
@@ -487,7 +484,10 @@ public class SWRBoard implements Board, Viewable {
     Flower first = move.getFirstFlower();
     Flower second = move.getSecondFlower();
 
-    if(playerflowerset.contains(first) || playerflowerset.contains(second)) {
+    if(redflowerset.contains(first) || redflowerset.contains(second)) {
+      return false;
+    }
+    if(blueflowerset.contains(first) || blueflowerset.contains(second)) {
       return false;
     }
 
@@ -500,15 +500,9 @@ public class SWRBoard implements Board, Viewable {
       return false;
     }
 
-    boolean empty = playerflowerset.isEmpty();
-    /*^^wird hier initialisiert, da unten sofort die flowers geaddet werden^^
-    daher wuerde dementsprechend immer true kommen. und das will man ja nicht*/
-
     playerflowerset.add(first); //Schritt Eins aus 'erkennen von gueltigen Zuegen'
     playerflowerset.add(second);
-    if(!empty) {
       if(isFlowerMoveLegal(playerflowerset, first, second)) {
-        status = Status.Ok;
         for(Field field : fieldset) {//Speichern der farbe in ein feld
           if(field.equals(first) || field.equals(second)) {
             field.setColor(current);
@@ -519,10 +513,11 @@ public class SWRBoard implements Board, Viewable {
       else {
         playerflowerset.remove(first);
         playerflowerset.remove(second);
+        if(isFlowerMoveLegal(playerflowerset, first, second)) {
+        }//ERSTMAL HIER, DAMIT DIE CLUSTERAMOUNTS KORREKT ÜBERSCHRIEBEN WERDEN!!!
         return false;
       }
-    }
-    return true;
+    //return true;
   }//END FLOWERMOVE
   //============================================================================
   /**Hilfsmethode fuer flowerMove, die die korrekte Position ueberprueft*/
@@ -606,16 +601,16 @@ public class SWRBoard implements Board, Viewable {
     }
 
     //vv schritte 7-10 vv
-    for(int i = 2; i < mark; i++) {//schritt 7
+    for(int i = 2; i <= mark; i++) {//schritt 7
       amount = 0;
       for(Field f : fieldset) {
         if(f.getMark() == i) {
           amount++;
+          if(amount > 4) { //hier schritt 9
+            cleanUpMarks();
+            return false;
+          }
         }
-      }
-      if(amount > 4) { //hier schritt 9
-        cleanUpMarks();
-        return false;
       }
 
       // vv Schritt 10-1 (faerben)
@@ -628,13 +623,19 @@ public class SWRBoard implements Board, Viewable {
       }
       // vv Schritt 10-2 (ueberpruefen)
       for(Field f : fieldset) {
-        if(f.equals(first) || f.equals(second)) {
-          if(f.getMark() == -1) {
-            cleanUpMarks();
-            return false;
-          }
-          if(f.getMark() == i) {//Rueckspeichern von groeße des Gartens
-            f.setClusteramount(amount);
+        for(Flower flower : playerflowerset) {
+          if(f.equals(flower)) {
+            /*System.out.println("f: " + f.toString());//FOR TTESTING PURPOSES!!!!!!
+            System.out.println("First : " + first.toString());
+            System.out.println("Second : " + second.toString());*/
+            if(f.getMark() == -1) {
+              //System.out.println("hier");
+              cleanUpMarks();
+              return false;
+            }
+            if(f.getMark() == i) {//Rueckspeichern von groeße des Gartens
+              f.setClusteramount(amount);
+            }
           }
         }
       }
@@ -650,15 +651,15 @@ public class SWRBoard implements Board, Viewable {
   private void cleanUpMarks () {//CHECKED
 
     for(Field f : fieldset) {
-      if(f.getMark() != -2) {
+      if(f.getMark() != -2) {//alle Markierungen außer die Ditch-markierung, da diese global für rot & blau gilt
         f.setMark(0);
       }
     }
 
   }//END CLEANUPMARKS
   //============================================================================
-  /**Hilfsmethode fuer isFlowerMoveLegal, die dafuer sorgt, dass Beete sich selbst
-   * und ihre Beet-Nachbarn in den zusaetzlichen Farben markieren
+  /**Hilfsmethode fuer isFlowerMoveLegal, die dafuer sorgt, dass Beete/Gaerten sich selbst
+   * und ihre Nachbarn in den zusaetzlichen Farben markieren
    */
   private void additionalColoring (Field field, int mark) {//CHECKED
 
@@ -695,20 +696,20 @@ public class SWRBoard implements Board, Viewable {
         /*^^ in separaten klauseln, damit wenns in einer ist,
         nicht rumgeheult wird, wenn right = null ist*/
         field.getRight().setMark(-1);
-        if(field.getRight().getVertical() != null) {
-          if(field.getRight().getVertical().getMark() != mark) {
-            field.getRight().getVertical().setMark(-1);
-          }//dann bekommt es die extra markierung -1, die aussagt, dass es nicht...
-        }//...bebaut werden darf, da hier ein Garten ist
+      }
+      if(field.getRight().getVertical() != null) {
+        if(field.getRight().getVertical().getMark() != mark) {
+          field.getRight().getVertical().setMark(-1);
+        }//dann bekommt es die extra markierung -1, die aussagt, dass es nicht...
+      }//...bebaut werden darf, da hier ein Garten ist
         //vv hier nochmal fuer rechten und oberen Nachbarn vv
-        if(field.getRight().getRight() != null) {
-          if(field.getRight().getRight().getMark() != mark) {
-            field.getRight().getRight().setMark(-1);
-          }
-          if(field.getRight().getRight().getVertical() != null) {
-            if(field.getRight().getRight().getVertical().getMark() != mark) {
-              field.getRight().getRight().getVertical().setMark(-1);
-            }
+      if(field.getRight().getRight() != null) {
+        if(field.getRight().getRight().getMark() != mark) {
+          field.getRight().getRight().setMark(-1);
+        }
+        if(field.getRight().getRight().getVertical() != null) {
+          if(field.getRight().getRight().getVertical().getMark() != mark) {
+            field.getRight().getRight().getVertical().setMark(-1);
           }
         }
       }
@@ -718,19 +719,19 @@ public class SWRBoard implements Board, Viewable {
         /*^^ in separaten klauseln, damit wenns in einer ist,
         nicht rumgeheult wird, wenn right = null ist*/
         field.getLeft().setMark(-1);
-        if(field.getLeft().getLeft() != null) {
-          if(field.getLeft().getLeft().getMark() != mark) {
-            field.getLeft().getLeft().setMark(-1);
-          }
+      }
+      if(field.getLeft().getLeft() != null) {
+        if(field.getLeft().getLeft().getMark() != mark) {
+          field.getLeft().getLeft().setMark(-1);
         }
-        if(field.getLeft().getVertical() != null) {
-          if(field.getLeft().getVertical().getMark() != mark) {
-            field.getLeft().getVertical().setMark(-1);
-          }
-          if(field.getLeft().getVertical().getRight() != null) {
-            if(field.getLeft().getVertical().getRight().getMark() != mark) {
-              field.getLeft().getVertical().getRight().setMark(-1);
-            }
+      }
+      if(field.getLeft().getVertical() != null) {
+        if(field.getLeft().getVertical().getMark() != mark) {
+          field.getLeft().getVertical().setMark(-1);
+        }
+        if(field.getLeft().getVertical().getRight() != null) {
+          if(field.getLeft().getVertical().getRight().getMark() != mark) {
+            field.getLeft().getVertical().getRight().setMark(-1);
           }
         }
       }
@@ -740,19 +741,19 @@ public class SWRBoard implements Board, Viewable {
         /*^^ in separaten klauseln, damit wenns in einer ist,
         nicht rumgeheult wird, wenn right = null ist*/
         field.getVertical().setMark(-1);
-        if(field.getVertical().getRight() != null) {
-          if(field.getVertical().getRight().getMark() != mark) {
-            field.getVertical().getRight().setMark(-1);
-          }
+      }
+      if(field.getVertical().getRight() != null) {
+        if(field.getVertical().getRight().getMark() != mark) {
+          field.getVertical().getRight().setMark(-1);
         }
-        if(field.getVertical().getLeft() != null) {
-          if(field.getVertical().getLeft().getMark() != mark) {
-            field.getVertical().getLeft().setMark(-1);
-          }
-          if(field.getVertical().getLeft().getLeft() != null) {
-            if(field.getVertical().getLeft().getLeft().getMark() != mark) {
-              field.getVertical().getLeft().getLeft().setMark(-1);
-            }
+      }
+      if(field.getVertical().getLeft() != null) {
+        if(field.getVertical().getLeft().getMark() != mark) {
+          field.getVertical().getLeft().setMark(-1);
+        }
+        if(field.getVertical().getLeft().getLeft() != null) {
+          if(field.getVertical().getLeft().getLeft().getMark() != mark) {
+            field.getVertical().getLeft().getLeft().setMark(-1);
           }
         }
       }
@@ -766,12 +767,12 @@ public class SWRBoard implements Board, Viewable {
   private boolean ditchMove (Move move, HashSet<Ditch> playerditchset, HashSet<Flower> playerflowerset) {//UNCHECKED
 
     Ditch ditch = move.getDitch();
-    int flowerconnectioncamount = 0; //um herauszufinden, ob auch wirklich 2 blumen connected sind und nicht leere felder dabei sind
+    int flowerconnectioncamount = 0; //um herauszufinden, ob auch wirklich 2 blumen connected sind und nicht leere felder an einem Ende sind
     Position pos1 = ditch.getFirst();
     Position pos2 = ditch.getSecond();
 
 
-    if(checkDitchPositions(ditch)) {//laenge gecheckt!
+    if(checkDitchPositions(ditch)) {//Legalitaet gecheckt!
       if(isNeighborEmpty(ditch)) {//FELDER WERDEN GLEICHZEITIG UNFRUCHTBAR GEMACHT!
         for(Ditch d : playerditchset) {//checken ob ein anderer ditch dieselbe pos hat
           if(!d.equals(ditch)) {
@@ -781,14 +782,13 @@ public class SWRBoard implements Board, Viewable {
               }
             }//ENDE FOREACH
 
-            if(flowerconnectioncamount > 1) {
+            if(flowerconnectioncamount > 1) { // da flowerconnectioncamount auch mehr als nur 2 blumen haben kann
                 return true;
             }
           }
-        }
+        }//ENDE FOREACH
       }
     }
-    status = Status.Illegal;
     return false;
 
   }//END DITCHMOVE
@@ -867,7 +867,7 @@ public class SWRBoard implements Board, Viewable {
 
     for(Field field : fieldset) {/*SUCHE NACH FELDER DIE BEIDE POSs MIT DEM DITCH
       GEMEINSAM HABEN!*/
-      if(pos1.equals(field.getFirst()) || pos1.equals(field.getSecond()) || pos1.equals(field.getThird())) {
+      if(pos1.equals(field.getFirst()) || pos1.equals(field.getSecond()) || pos1.equals(field.getThird())) { //ICH GLAUBE HIER IST EIN PROBLEM!!!!!!!!!!!!!!!!!!!!!!!!
         if(pos2.equals(field.getFirst()) || pos2.equals(field.getSecond()) || pos2.equals(field.getThird())) {
             if(field.getColor() == null) {
               markierte.add(field);
@@ -1030,7 +1030,11 @@ public class SWRBoard implements Board, Viewable {
 
     SWRBoard b = new SWRBoard(size);
 
-    int testamount = 0;
+  /*  System.out.println(b.getCurrentPlayer());
+    b.nextPlayer();
+    System.out.println(b.getCurrentPlayer());*/
+
+    /*int testamount = 0;
 
     Ditch doa = Ditch.parseDitch("{(5,5),(4,5)}");
 
@@ -1050,7 +1054,7 @@ public class SWRBoard implements Board, Viewable {
       }
     }
 
-    System.out.println(testamount);
+    System.out.println(testamount);*/
 
   /*  HashSet<Ditch> testset = new HashSet<Ditch>();
 
