@@ -1,4 +1,5 @@
 package app.gameboard;
+import flowerwarspp.preset.*;
 import java.awt.*;
 import javax.swing.*;
 import java.io.*;
@@ -7,20 +8,41 @@ import javax.imageio.ImageIO;
 import java.awt.image.*;
 import java.awt.event.*;
 
-// Для обновления очков добавить их значения в качестве параметров конструктора ??
+/**
+    * Die Klasse Scores repräsentiert eine Tabelle mit Punkten von Spielern und enthält
+    * alle dau benötigte Information
+    * @author Viktoriya Pak
+*/
 
 public class Scores extends JPanel {
-
+    /**
+        * Die Punkte des roten Spielers
+    */
     private int scoreRed = 14;
+    /**
+        * Die Punkte des blauen Spielers
+    */
     private int scoreBlue = 1;
 
+    /**
+        * Setter-Methode für {@link #scoreRed}
+    */
     public void setScoreRed(int sc) {
         scoreRed = sc;
     }
+
+    /**
+        * Setter-Methode für {@link #scoreBlue}
+    */
     public void setScoreBlue (int sc) {
         scoreBlue = sc;
     }
-
+    /**
+        * Konstruktor der Klasse erzeugt eine graphische Darstellung der Tabelle und
+        * gibt die Punkte beider Spieler aus
+        * @throws IOException Wenn das Bild für die Tabelle nicht vorhanden ist
+    */
+    //public Scores(int scoreRed, int scoreBlue) {
     public Scores() {
 
         try {

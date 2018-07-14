@@ -33,7 +33,7 @@
 			classpath = "${build.dir}"
 			classname = "app.testing.TestGameboard"
 			>
-			<arg value="3"/>
+			<arg value="4"/>
 	   </java>
    </target>
 

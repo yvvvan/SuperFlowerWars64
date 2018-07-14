@@ -2,7 +2,7 @@ package app.testing;
 import app.gameboard.*;
 import java.awt.EventQueue;
 
-public class TestGameboard /*implements Requestable*/{
+public class TestGameboardGUI /*implements Requestable*/{
     public static void main(String[] args) {
         int size;
         if (args.length == 0)
@@ -17,10 +17,8 @@ public class TestGameboard /*implements Requestable*/{
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                Gameboard.display(size);
+                GameboardGUI.display(size);
             }
         });
-
-        //public Move request() { }
     }
 }

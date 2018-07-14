@@ -7,9 +7,27 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import java.awt.image.*;
 
+/**
+    * Die Klasse Buttons ist für das Erzeugen zweier Buttons und für die Bearbeitung
+    * der Ereignisse dieser Buttons
+    * @author Viktoriya Pak
+*/
+
 public class Buttons extends JPanel {
+    /**
+        * Ein Zug vom Typ {@link MoveType#Surrender}
+    */
     private Move giveUpMove;
+    /**
+        * Ein Zug vom Typ {@link MoveType#End}
+    */
     private Move endGameMove;
+
+    /**
+        * Konstruktor der Klasse erzeugt zweu Buttons und enthält
+        * {@link ActionListener} für jeden Button. Wenn ein Button
+        * angecklickt wird, werdern die entsprechende Züge erzeugt.
+    */
     public Buttons() {
         setBackground(new Color(255,140,0));
         setLayout(new BorderLayout());
@@ -44,9 +62,17 @@ public class Buttons extends JPanel {
 
     }
 
+    /**
+        * Getter-Methode für {@link #giveUpMove}
+    */
+
     public Move getGiveUpMove() {
         return giveUpMove;
     }
+
+    /**
+        * Getter-Methode für {@link #endGameMove}
+    */
 
     public Move getEndGameMove() {
         return endGameMove;

@@ -1,11 +1,11 @@
 package app.gameboard;
+import flowerwarspp.preset.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
 /**
-    * <h1>Punkt</h1>
-    * Die Klasse enthält die Information zum Aufzeichnen eines Punktes
+    * Die Klasse Dots enthält die Information zum Aufzeichnen eines Punktes
     * @author Viktoriya Pak
 */
 

@@ -1,4 +1,5 @@
 package app.gameboard;
+import flowerwarspp.preset.*;
 import java.awt.*;
 import javax.swing.*;
 import java.io.*;
@@ -9,40 +10,166 @@ import java.awt.event.*;
 import java.awt.geom.Line2D;
 import java.awt.geom.Line2D.Float;
 import java.awt.geom.Point2D;
+import java.lang.*;
 // Royal blue 65 105 225
 //
+/**
+    * Die Klasse GameboardGUI ist für die graphische Ausgabe des Spielbretts.
+    * @author Viktoriya Pak
+*/
 
-public class Gameboard extends JPanel{
+public class GameboardGUI extends JPanel implements Requestable, Output{
+    /**
+        * Die Höhe des Spielbrettpanels.
+        * Dieser Wert ist veränderbar und hängt von der Größe des Fensters
+    */
     private int panelHeight;
+    /**
+        * Die Breite des Spielbrettpanels.
+        * Dieser Wert ist veränderbar und hängt von der Größe des Fensters
+    */
     private int panelWidth;
+    /**
+        * Die Größe des Spielbretts (von 3 bis 30)
+    */
     private int size;
+    /**
+        * Der Array der X-Koordinaten von allen Punkten auf dem Spielbrett
+    */
     private int[] xpoints_g;
+    /**
+        * Der Array der Y-Koordinaten von allen Punkten auf dem Spielbrett
+    */
     private int[] ypoints_g;
+    /**
+        * Die Anzahl von Punkten auf dem Spielbrett
+    */
     private int npoints;
+    /**
+        * Der Array enthält alle Dreicke, die Felder des Spielbretts repräsentieren
+    */
     private Triangle[] trianglesArray;
+    /**
+        * Collection enthält alle Polygone zu dementsprechendem Dreieck
+    */
     private ArrayList<Polygon> polyArray = new ArrayList<Polygon>();
+    /**
+        * Frame für das Spielbrett
+    */
     private JFrame frame;
-    private int indexTriangle = -1;
-    private int indexLine = -1;
+    /**
+        * Der Array enthält Farben von allen Dreicken
+    */
     private Color[] colorTriangle;
+    /**
+        * Der Array enthält Farben von allen Linien (Gräben)
+    */
     private Color[] colorLine;
+    /**
+        * Collection enthält alle Linien, die Gräben des Spielbretts repräsentieren
+    */
     private ArrayList<Line> linesArray = new ArrayList<Line>();
-    //private PlayerColor playerColor;
+    /**
+        * Collection enthält Positionen von allen Feldern des Spielbretts
+    */
+    private final ArrayList<Position[]> trianglesPositionsArray = new ArrayList<Position[]>();
+    /**
+        * Collection enthält Positionen von allen Gräben des Spielbretts
+    */
+    private final ArrayList<Position[]> linesPositionsArray = new ArrayList<Position[]>();
+    /**
+        * Die erste Blume eines Zuges, die nach dem Mausklick engepflanzt werden kann
+    */
+    private Flower firstFlower;
+    /**
+        * Die zweite Blume eines Zuges, die nach dem Mausklick engepflanzt werden kann
+    */
+    private Flower secondFlower;
+    /**
+        * Ein Graben, der nach dem Mausklick engepflanzt werden kann
+    */
+    private Ditch ditch;
+    /**
+        * Ein Zug, den Spieler gemacht hat
+    */
+    private Move newMove;
 
-    public Gameboard(JFrame frame, int size) {
+    //private PlayerColor playerColor;
+    /**
+        * Fördert und liefert einen Zug
+        * @return einen neuen Zug
+    */
+    @Override
+    public synchronized Move request() {
+      try {
+        GameboardGUI.class.wait();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      GameboardGUI.class.notifyAll();
+      return getNewMove();
+    }
+
+    /**
+        * Getter-Methode für den Move-Objekt
+    */
+
+    public Move getNewMove() {
+        return newMove;
+    }
+
+    /**
+        * Setter-Methode für die erste Blume in einem Zug
+    */
+
+    public void setFirstFlower(Flower firstFlower) {
+        this.firstFlower = firstFlower;
+    }
+
+    /**
+        * Setter-Methode für die zweite Blume in einem Zug
+    */
+
+    public void setSecondFlower(Flower secondFlower) {
+        this.secondFlower = secondFlower;
+    }
+
+    /**
+        * Setter-Methode für den Graben in einem Zug
+    */
+
+    public void setDitch(Ditch ditch) {
+        this.ditch = ditch;
+    }
+
+    /**
+        * Konstruktor der Klasse.
+        * Enthält {@link WindowStateListener}, der neue Werte für {@link #panelWidth} und {@link #panelHeight} einsetzt,
+        * wenn das Fenster maximiert oder minimiert wird.
+        * Enthält {@link ComponentListener}, der neue Werte für {@link #panelWidth} und {@link #panelHeight} einsetzt,
+        * wenn die Größe des Fensters veränert wird.
+        * Enthält {@link MouseListener}, der auf Klicke auf Feler/Buttons des Spielbretts reagiert (die entsprechende Zugtypen werden erzeugt)
+        * Wenn ein Feld/Graben angeklickt wird, werden den entsprechneden Objekten neue Farben zugewiesen und das Spielbrett wird
+        * von neuem gezeichnet.
+        * @param frame Ein Frame, an den das WindowEvent angehängt wird
+        * @param size Die Größe des Spielbretts
+    */
+
+    public GameboardGUI(JFrame frame, int size) {
 
         WindowStateListener listener = new WindowAdapter() {
+
             public void windowStateChanged(WindowEvent evt) {
                 int oldState = evt.getOldState();
                 int newState = evt.getNewState();
 
                 if ((oldState & Frame.MAXIMIZED_BOTH) == 0 && (newState & Frame.MAXIMIZED_BOTH) != 0) {
-                    System.out.println("Frame was maximized");
+                    //System.out.println("Frame was maximized");
                     panelHeight = frame.getHeight();
                     panelWidth = frame.getWidth();
                 }
                 else if ((oldState & Frame.MAXIMIZED_BOTH) != 0 && (newState & Frame.MAXIMIZED_BOTH) == 0) {
-                    System.out.println("Frame was minimized");
+                    //System.out.println("Frame was minimized");
                     panelHeight = frame.getHeight();
                     panelWidth = frame.getWidth();
                 }
@@ -65,6 +192,9 @@ public class Gameboard extends JPanel{
         this.npoints = (size + 1)*(size + 2)/2;
         panelHeight = frame.getHeight();
         panelWidth = frame.getWidth();
+
+        init_position();
+
         repaintGameboard();
 
         this.addComponentListener(new ComponentAdapter() {
@@ -72,7 +202,6 @@ public class Gameboard extends JPanel{
             public void componentResized(ComponentEvent e) {
                 panelHeight = frame.getHeight();
                 panelWidth = frame.getWidth();
-                //System.out.println("Width: " + panelWidth + "\nHeight: " + panelHeight);
             }
         });
 
@@ -87,7 +216,15 @@ public class Gameboard extends JPanel{
                   if (l.getLine().intersects(xClick, yClick, shapeSize, shapeSize) && (!linesArray.get(linesArray.indexOf(l)).isLineClicked())) {
                     System.out.println("Clicked Line");
                     alreadyClickedLine = true;
-                    indexLine = linesArray.indexOf(l);
+                    int indexLine = linesArray.indexOf(l);
+                    synchronized(this) {
+                        if (ditch == null) {
+                          Ditch d = new Ditch(linesPositionsArray.get(indexLine)[0], linesPositionsArray.get(indexLine)[1]);
+                          setDitch(d);
+                          ditch = null;
+                        }
+                        notify();
+                    }
                     linesArray.get(indexLine).setLineClicked();
                     colorLine[indexLine] = new Color(222, 49, 99);
                     Graphics g = getGraphics();
@@ -113,7 +250,24 @@ public class Gameboard extends JPanel{
                     for (Polygon poly : polyArray) {
                         if (!alreadyClickedLine && poly.contains(p) && (!trianglesArray[polyArray.indexOf(poly)].isTriangleClicked())) {
                             System.out.println("Clicked triangle");
-                            indexTriangle = polyArray.indexOf(poly);
+                            int indexTriangle = polyArray.indexOf(poly);
+
+                            synchronized(this) {
+                                if (firstFlower == null) {
+                                  Flower fstFl = new Flower(trianglesPositionsArray.get(indexTriangle)[0], trianglesPositionsArray.get(indexTriangle)[1], trianglesPositionsArray.get(indexTriangle)[2]);
+                                  setFirstFlower(fstFl);
+                                }
+                                else if (secondFlower == null) {
+                                  Flower sndFl = new Flower(trianglesPositionsArray.get(indexTriangle)[0], trianglesPositionsArray.get(indexTriangle)[1], trianglesPositionsArray.get(indexTriangle)[2]);
+                                  setSecondFlower(sndFl);
+                                }
+                                else {
+                                  newMove = new Move(firstFlower, secondFlower);
+                                  firstFlower = null;
+                                  secondFlower = null;
+                                }
+                                notify();
+                            }
                             trianglesArray[indexTriangle].setTriangleClicked(true);
 
                             colorTriangle[indexTriangle] = new Color(204,51,51);
@@ -125,16 +279,10 @@ public class Gameboard extends JPanel{
 
                             if (tmpY[0] == tmpY[1]) {
                                 tmpX[0] -= 1;
-                                //tmpX[1] -= 3;
                                 tmpX[2] -= 1;
-                                //tmpY[2] -= 1;
-                                //tmpY[0] -= 1;
-                                //tmpY[1] -= 1;
-                                //tmpY[2] += 5;
                             }
                             else {
                                 tmpX[2] -= 2;
-                                //tmpX[1] += 2;
                                 tmpX[0] -= 8;
                                 tmpY[0] -= 9;
                                 tmpY[2] += 2;
@@ -152,7 +300,6 @@ public class Gameboard extends JPanel{
                 int l = 0;
                 Graphics g = getGraphics();
                 for (int i = 0; i < npoints; i++) {
-                    //System.out.println("l = " + l);
                     g.setColor(new Color(119,136,153));
                     if (i == k + cnt || i == 0) {
                         if (i == npoints-1) {
@@ -160,7 +307,6 @@ public class Gameboard extends JPanel{
                             continue;
                         }
                         g.fillOval(xpoints_g[i]-10, ypoints_g[i]-3, size > 20 ? 17:22, size > 20 ? 17:22);
-
                         k += cnt;
                         cnt--;
                     }
@@ -168,26 +314,101 @@ public class Gameboard extends JPanel{
                         g.fillOval(xpoints_g[i]+3, ypoints_g[i]-3, size > 20 ? 17:22, size > 20 ? 17:22);
                         l += cnt1;
                         cnt1--;
-
                     }
                     else {
-
                         g.fillOval(xpoints_g[i]-6, ypoints_g[i]-3, size > 20 ? 17:22, size > 20 ? 17:22);
                    }
                 }
             }
         });
+    } // END GAMEBOARD KONSTRUKTOR
+
+    /**
+        * Initialisiert {@link Position}-Arrays für alle Felder und Gräben.
+        * Wird nur einmal im Konstruktior der Klasse aufgerufen
+    */
+    protected void init_position() {
+        int lim = size;
+        int cnt = size+1;
+        int k = 0;
+        int i = 0;
+        int col = 1;
+        int row = 1;
+        for (int z = 0; z < size; z++) {
+            while (k < lim) {
+                Position[] posArrayTriangle = new Position[3];
+                Position pos = new Position(col, row);
+                posArrayTriangle[0] = pos;
+                pos = new Position(col+1, row);
+                posArrayTriangle[1] = pos;
+                pos = new Position(col,row+1);
+                posArrayTriangle[2] = pos;
+                col++;
+                trianglesPositionsArray.add(posArrayTriangle);
+                if (k < lim-1) {
+                    Position[] posArrayTriangle1 = new Position[3];
+                    Position pos1 = new Position(col, row);
+                    posArrayTriangle1[0] = pos1;
+                    pos1 = new Position(col-1, row+1);
+                    posArrayTriangle1[1] = pos1;
+                    pos1 = new Position(col,row+1);
+                    posArrayTriangle1[2] = pos1;
+                    trianglesPositionsArray.add(posArrayTriangle1);
+                }
+                k++;
+            }
+            col = 1;
+            row++;
+            cnt--;
+            lim = k + cnt;
+            k++;
+        }
+
+        k = 0;
+        lim = size;
+        cnt = size + 1;
+        col = 1;
+        row = 1;
+       for (int z = 0; z < size; z++) {
+            while (k < lim) {
+                Position[] posArrayLine = new Position[2];
+                Position pos = new Position(col, row);
+                posArrayLine[0] = pos;
+                pos = new Position (col+1, row);
+                posArrayLine[1] = pos;
+                Position[] posArrayLine1 = new Position[2];
+                linesPositionsArray.add(posArrayLine);
+                posArrayLine1[0] = new Position(col+1, row);
+                posArrayLine1[1] = new Position(col, row+1);
+                linesPositionsArray.add(posArrayLine1);
+                Position[] posArrayLine2 = new Position[2];
+                posArrayLine2[0] = new Position(col, row+1);
+                posArrayLine2[1] = new Position(col, row);
+                linesPositionsArray.add(posArrayLine2);
+                k++;
+                col++;
+            }
+            col = 1;
+            row++;
+            cnt--;
+            lim = k + cnt;
+            k++;
+        }
     }
 
+    /**
+        * Aktualisiert die Koordinten für alle Objekte auf dem Spielbrett (nach Window-, Component- oder Mouse-Ereignissen)
+        * für das weitere Zeichnen von {@link #paintComponent}
+    */
 
-    public void repaintGameboard() {
+    protected void repaintGameboard() {
         int lenLineHor = (panelWidth - 160)/(size+1);
         int lenLineVer = (panelHeight - 144)/(size+1);
         int i = size + 1;
         int j = 0;
         int k = 0;
         int cnt = 0;
-	    int tmpW = (panelWidth - lenLineHor*size)/2;
+	      int tmpW = (panelWidth - lenLineHor*size)/2;
         int var = (size > 10)? -25 : 0;
         int tmpH = (panelHeight - lenLineVer/2 + var);
         Dots[] dotsArr = new Dots[npoints];
@@ -215,7 +436,7 @@ public class Gameboard extends JPanel{
         ypoints_g = ypoints;
 
         int[] triangleX = new int[3];
-		int[] triangleY = new int[3];
+		    int[] triangleY = new int[3];
         int lim = size;
         cnt = size+1;
         k = 0;
@@ -279,8 +500,11 @@ public class Gameboard extends JPanel{
         trianglesArray = trianglesArr;
         polyArray = polyArr;
         linesArray = linesArr;
-
     }
+
+    /**
+        * Stellt Spielbrett-Objekte (Punkte, Linien für Gräben und Polygone für Dreickfelder) graphisch dar.
+    */
 
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -305,12 +529,10 @@ public class Gameboard extends JPanel{
                 tmpX[1] += 7;
                 tmpX[2] -= 8;
                 tmpX[0] += 7;
-                //tmpY[0] -= 1;
                 tmpY[1] += 4;
                 tmpY[2] += 4;
             }
             g.fillPolygon(tmpX, tmpY, 3);
-
         }
 
         for (Line l : linesArray) {
@@ -351,17 +573,22 @@ public class Gameboard extends JPanel{
 
             }
             else {
-
                 g.fillOval(xpoints_g[i]-6, ypoints_g[i]-3, size > 20 ? 17:22, size > 20 ? 17:22);
             }
         }
     }
 
+    /**
+        * Erzeugt eine Instanz von {@link GameboardGUI}-Klasse und fügt andere Elemente
+        * des Spielbretts (Buttons, Punkten Tabelle) hinzu.
+        * @param size Die Größe des Spielbretts
+    */
+
     public static void display(int size) {
         JFrame f = new JFrame("SuperFlowerWars64");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(1280, 1080);
-        JPanel gameboardPanel = new Gameboard(f, size);
+        JPanel gameboardPanel = new GameboardGUI(f, size);
         JPanel scores = new Scores();
 
         gameboardPanel.add(scores);
