@@ -502,7 +502,7 @@ public class SWRBoard implements Board, Viewable {
 
     playerflowerset.add(first); //Schritt Eins aus 'erkennen von gueltigen Zuegen'
     playerflowerset.add(second);
-      if(isFlowerMoveLegal(playerflowerset, first, second)) {
+      if(isFlowerMoveLegal(playerflowerset)) {
         for(Field field : fieldset) {//Speichern der farbe in ein feld
           if(field.equals(first) || field.equals(second)) {
             field.setColor(current);
@@ -513,7 +513,7 @@ public class SWRBoard implements Board, Viewable {
       else {
         playerflowerset.remove(first);
         playerflowerset.remove(second);
-        if(isFlowerMoveLegal(playerflowerset, first, second)) {
+        if(isFlowerMoveLegal(playerflowerset)) {
         }//ERSTMAL HIER, DAMIT DIE CLUSTERAMOUNTS KORREKT ÜBERSCHRIEBEN WERDEN!!!
         return false;
       }
@@ -574,12 +574,14 @@ public class SWRBoard implements Board, Viewable {
   /**Hilfsmethode fuer flowerMove. Überprueft teilw. ueber andere Methoden
    * die Gueltigkeit eines Zuges, der Blumen beinhaltet.
    */
-  private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset, Flower first, Flower second) {
+  private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset) {
     //UNCHECKED
 
+    HashSet<Field> gardenset = new HashSet<Field>();
+    HashSet<Field> saveableguys = new HashSet<Field>();
     int mark = 1; //1 = grau, andere ints sind andere farben fuer die felder
     int amount = 0; // fuer schritt 7
-    //-vv Alle flowers kriegen eine graue Faerbung vv----------------------------
+    //-vv Alle flowers kriegen eine graue Faerbung vv---------------------------
     for(Flower flower : playerflowerset) {
       for(Field field : fieldset) {
         if(field.equals(flower)) {
@@ -592,55 +594,47 @@ public class SWRBoard implements Board, Viewable {
           }
         }
       }
-    }
+    }//^^ --------------------------------------------------------------------^^
     //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv
     for(Field f : fieldset) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
       }//Schritte 3-6
-    }
+    }//^^---------------------------------------------------------------------^^
 
     //vv schritte 7-10 vv
     for(int i = 2; i <= mark; i++) {//schritt 7
       amount = 0;
       for(Field f : fieldset) {
         if(f.getMark() == i) {
-          amount++;
+          saveableguys.add(f);  //saveableguys ist ein set, in dem felder vorgemerkt...
+          amount++;             //...werden, damit ihre beet/garten menge an feldern rueckgespeichert werden kann
           if(amount > 4) { //hier schritt 9
             cleanUpMarks();
             return false;
           }
         }
-      }
-
-      // vv Schritt 10-1 (faerben)
-      if(amount == 4) {
-        for(Field f : fieldset) {
-          if(f.getMark() == i) {
-            illegalColoring(f);
-          }
+      }//ENDE FOREACH
+      for(Field f : saveableguys) {//hier werden saveableguys' mengen zurueckgespeichert
+        f.setClusteramount(amount);
+        if(amount == 4) {          //gleichzeitig werden sie in ein set in dem alle gartenfelder sind,...
+          gardenset.add(f);        //...gespeichert, sobald die menge 4 ist
         }
-      }
-      // vv Schritt 10-2 (ueberpruefen)
-      for(Field f : fieldset) {
-        for(Flower flower : playerflowerset) {
-          if(f.equals(flower)) {
-            /*System.out.println("f: " + f.toString());//FOR TTESTING PURPOSES!!!!!!
-            System.out.println("First : " + first.toString());
-            System.out.println("Second : " + second.toString());*/
-            if(f.getMark() == -1) {
-              //System.out.println("hier");
-              cleanUpMarks();
-              return false;
-            }
-            if(f.getMark() == i) {//Rueckspeichern von groeße des Gartens
-              f.setClusteramount(amount);
-            }
-          }
-        }
-      }
-
+      }//ENDE FOREACH
     }
+
+    for(Field f : gardenset) {    //hier wird dann über alle felder die in einem...
+      illegalColoring(f);         //...Garten sind, iteriert, damit diese die Felder um sich herum...
+    }                             //nach der Gartenabstandsregel als ungültig markieren
+    for(Field f : fieldset) {
+      for(Flower flower: playerflowerset) {
+        if(f.equals(flower) && (f.getMark() == -1)) { //hier wird das ganz ueberprueft:...
+          cleanUpMarks();                             //wenn ein feld gefunden wird, was eine blume auf...
+          return false;                               //sich hat UND die gartenabstandregel-verletzung...
+        }                                             //als markierung hat, wird false zurueckgegeben
+      }
+    }
+
     cleanUpMarks();
     return true; //schritt 11
   }//ENDE ISFLOWERMOVELEGAL
