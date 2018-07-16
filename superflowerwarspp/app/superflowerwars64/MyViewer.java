@@ -1,5 +1,4 @@
 package app.superflowerwars64;
-
 import flowerwarspp.preset.*;
 import java.util.*;
 import app.superflowerwars64.SWRBoard;

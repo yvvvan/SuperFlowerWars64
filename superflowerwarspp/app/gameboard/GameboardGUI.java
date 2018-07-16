@@ -592,7 +592,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         * @param size Die Größe des Spielbretts
     */
 
-    public static void display(int size) {
+    public void display(int size) {
         JFrame f = new JFrame("SuperFlowerWars64");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(1280, 1080);
