@@ -1,5 +1,6 @@
 package app.gameboard;
 import flowerwarspp.preset.*;
+import app.superflowerwars64.*;
 import java.awt.*;
 import javax.swing.*;
 import java.io.*;
@@ -94,6 +95,8 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
     */
     private Move newMove;
 
+    private MyViewer myViewer;
+
     //private PlayerColor playerColor;
     /**
         * Fördert und liefert einen Zug
@@ -142,6 +145,10 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         this.ditch = ditch;
     }
 
+    public void setMyViewer(MyViewer myViewer) {
+        this.myViewer = myViewer;
+    }
+
     /**
         * Konstruktor der Klasse.
         * Enthält {@link WindowStateListener}, der neue Werte für {@link #panelWidth} und {@link #panelHeight} einsetzt,
@@ -155,8 +162,9 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         * @param size Die Größe des Spielbretts
     */
 
-    public GameboardGUI(JFrame frame, int size) {
+    public GameboardGUI(JFrame frame, int size/*, MyViewer myViewer*/) {
 
+        //this.myViewer = myViewer;
         WindowStateListener listener = new WindowAdapter() {
 
             public void windowStateChanged(WindowEvent evt) {
