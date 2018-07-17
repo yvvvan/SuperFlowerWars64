@@ -95,11 +95,13 @@ public class SWRBoard implements Board, Viewable {
   private Field fieldconstructor(int i, int j, Collection<Field> coll) {//CHECKED
 
     Field f = new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j));
+    Field ff = new Field(new Position(i, j+1), new Position(i+1, j), new Position(i+1, j+1));//Vertikaler nachbar
+
 
     if((i+j) < (size + 1)) {//WENN I+J == SIZE, IST MAN AN DER RECHTEN KANTE ANGEKOMMEN!
-      Field ff = invertedfieldconstructor(i, j+1, coll);
+      ff = invertedfieldconstructor(i, j+1, coll);
       f.setRight(ff);
-      ff.setLeft(ff);
+      ff.setLeft(f);
       coll.add(ff);
 
     }
@@ -113,26 +115,55 @@ public class SWRBoard implements Board, Viewable {
   private Field invertedfieldconstructor(int i, int j, Collection<Field> coll) {//CHECKED
 
     Field f = new Field(new Position(i, j), new Position(i+1, j-1), new Position(i+1, j));
+    Field ff = new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j));//Vertikaler nachbar
+    Field fff = new Field(new Position(i+1, j-1), new Position(i+1, j+1), new Position(i+1, j)); //DIES IST DER RECHTE NACHBAR
 
-    Field ff = fieldconstructor(i, j, coll); //DIES IST DER OBERE NACHBAR
-    //EIN UMGEKEHRTES FELD HAT IMMER EINEN OBEREN NACHBARN
-    if(!coll.contains(ff)) {
-      f.setVertical(ff);
+    Field vert = null;
+    Field right = null;
+
+    for(Field x : coll) {
+      if(x.equals(ff)) {
+        vert = x;
+      }
+      if(x.equals(fff)) {
+        right = x;
+      }
+    }
+    if(vert == null) {
+      ff = fieldconstructor(i, j, coll);
       ff.setVertical(f);
+      f.setVertical(ff);
       coll.add(ff);
     }
-    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT.
-      WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN ES WERDEN EINFACH
-      NUR DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
-      FELD KONSTRUIEREN MIT FOLGENDER KOLLISION, DIE NUR EIN FELD MIT ZU WENIG
-      NACHBARN IM SET LASSEN WÜRDE*/
-      for(Field x : coll) {
-        if(x.equals(ff)) {
-          x.setVertical(f);
+    else{
+      vert.setVertical(f);
+      f.setVertical(vert);
+    }
+    if(right == null) {
+      fff = fieldconstructor(i+1, j-1, coll);
+      fff.setLeft(f);
+      f.setRight(fff);
+      coll.add(fff);
+    }
+    else{
+      right.setLeft(f);
+      f.setRight(right);
+    }
+
+    /*if(i == 1) { //es wird nur ein oberer Nachbar konstruiert, wenn row = 1 ist...
+      f.setVertical(ff);//da es nur dann nötig ist. alle...
+      ff.setVertical(f);//anderen Felder können als rechte Nachbarn konstruiert werden
+      coll.add(ff);
+    }
+    else {//hier wird überprüft ob wo das feld ist, das äquivalent zu dem oberen...
+      for(Field x : coll) {//Nachbarn ist, um die nachbar referenzen richtig zu setzen...
+        if(x.equals(ff)) {//denn nur dasjenige feld was seinen Nachbarn konstruiert,...
+          x.setVertical(f);//hatte ursprünglich die korrekte referenz.
           f.setVertical(x);
         }
       }
     }
+
     //--------------------------------------------------------------------------
     Field fff = fieldconstructor(i+1, j-1, coll); //DIES IST DER RECHTE NACHBAR
     //EIN UMGEKEHRTES FELD HAT AUCH IMMER EINEN RECHTEN NACHBARN
@@ -141,18 +172,18 @@ public class SWRBoard implements Board, Viewable {
       fff.setLeft(f);
       coll.add(fff);
     }
-    else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT.
+    /*else {  /*HIER WIRD GESCHAUT SOBALD DAS ENTSTEHENDE FELD BEREITS EXISTIERT.
       WENN ES DAS TUT, DANN WIRD ES NICHT INS SET GEADDET SONDERN ES WERDEN EINFACH
       NUR DIE NACHBARN AKTUALISIERT, DAMIT ZWEI VERSCH FELDER NICHT EIN UND DASSELBE
       FELD KONSTRUIEREN MIT FOLGENDER KOLLISION, DIE NUR EIN FELD MIT ZU WENIG
       NACHBARN IM SET LASSEN WÜRDE*/
-      for(Field x : coll) {
+    /*  for(Field x : coll) {
         if(x.equals(fff)) {
           x.setVertical(f);
           fff.setVertical(x);
         }
       }
-    }
+    }*/
     return f;
 
   }//END INVERTEDFIELDCONSTRUCTOR
@@ -621,7 +652,9 @@ public class SWRBoard implements Board, Viewable {
           gardenset.add(f);        //...gespeichert, sobald die menge 4 ist
         }
       }//ENDE FOREACH
-    }
+      saveableguys.clear();// hier wird das set wieder geleert, damit nicht ...
+                          //... die falschen amount-werte gepseichert werden
+    }//ENDE FOR
 
     for(Field f : gardenset) {    //hier wird dann über alle felder die in einem...
       illegalColoring(f);         //...Garten sind, iteriert, damit diese die Felder um sich herum...
@@ -1107,21 +1140,124 @@ public class SWRBoard implements Board, Viewable {
       System.out.println(i);
     }
     //int x = b.getPoints(b.getCurrentPlayer());*/
-    /*System.out.println(b.status);
+    //System.out.println(b.status);
 
 
-    Flower flower = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
+    Flower flower = new Flower(new Position(2,5), new Position(2,4), new Position(3,4));
+    Flower flower1 = new Flower(new Position(2,4), new Position(3,4), new Position(3,3));
+    Flower flower2 = new Flower(new Position(3,3), new Position(3,4), new Position(4,3));
+    Flower flower3 = new Flower(new Position(3,3), new Position(4,3), new Position(4,2));
+
+    Flower flower5 = new Flower(new Position(1,2), new Position(2,2), new Position(1,3));
+    Flower flower6 = new Flower(new Position(2,2), new Position(3,2), new Position(2,3));
+    Flower flower7 = new Flower(new Position(2,2), new Position(1,3), new Position(2,3));
+    Flower flower8 = new Flower(new Position(1,3), new Position(2,3), new Position(1,4));
+
+    //Flower flower4 = new Flower(new Position(3,2), new Position(2,3), new Position(3,3));
+
+
     b.redflowerset.add(flower);
+    b.redflowerset.add(flower1);
+    b.redflowerset.add(flower2);
+    b.redflowerset.add(flower3);
+    b.redflowerset.add(flower5);
+    b.redflowerset.add(flower6);
+    b.redflowerset.add(flower7);
+    b.redflowerset.add(flower8);
+
+
+
+    //b.redflowerset.add(flower4);
 
     for(Field f : b.fieldset) {
-      if(f.equals(flower)) {
-        b.additionalColoring(f, 2);
-        System.out.println(f.toString());
-        b.cleanUpMarks();
-        System.out.println(f.toString());
-
+      System.out.println(f);
+    }
+    System.out.println("initial end");
+    int mark = 1; //1 = grau, andere ints sind andere farben fuer die felder
+    int amount = 0; // fuer schritt 7
+    //-vv Alle flowers kriegen eine graue Faerbung vv---------------------------
+    for(Flower flowery : b.redflowerset) {
+      for(Field field : b.fieldset) {
+        if(field.equals(flowery)) {
+          if(field.getMark() != -2) {//-2 ->wenn ditch da ist
+            field.setMark(mark);
+          }
+          else {
+            b.cleanUpMarks();
+          }
+        }
       }
-    }//*/
+    }//^^ --------------------------------------------------------------------^^
+    for(Field f : b.fieldset) {
+      System.out.println(f);
+      System.out.println("fVertical = " + f.getVertical());
+    }
+    System.out.println("after mark end");
+    //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv
+    for(Field f : b.fieldset) {
+      //System.out.println("this is called by  col. : " + f + " " + f.getVertical());
+      if(f.getMark() == 1) {
+        System.out.println("this is called by add col. : " + f + " " + f.getVertical());
+        b.additionalColoring(f, ++mark);
+      }//Schritte 3-6
+    }//^^---------------------------------------------------------------------^^
+    /*for(Field f : b.fieldset) {
+      System.out.println(f);
+    }*/
+    System.out.println("after mark check");
+    int samount;
+    HashSet<Field> saveableguys = new HashSet<Field>();
+    HashSet<Field> gardenset = new HashSet<Field>();
+
+    //vv schritte 7-10 vv
+    for(int i = 2; i <= mark; i++) {//schritt 7
+      samount = 0;
+      for(Field f : b.fieldset) {
+        if(f.getMark() == i) {
+          saveableguys.add(f);  //saveableguys ist ein set, in dem felder vorgemerkt...
+          samount++;             //...werden, damit ihre beet/garten menge an feldern rueckgespeichert werden kann
+          if(samount > 4) { //hier schritt 9
+            b.cleanUpMarks();
+          }
+        }
+      }//ENDE FOREACH
+
+      for(Field f : saveableguys) {//hier werden saveableguys' mengen zurueckgespeichert
+        System.out.println(f);
+        f.setClusteramount(samount);
+        if(samount == 4) {          //gleichzeitig werden sie in ein set in dem alle gartenfelder sind,...
+          gardenset.add(f);        //...gespeichert, sobald die menge 4 ist
+        }
+      }//ENDE FOREACH
+      saveableguys.clear();// hier wird das set wieder geleert, damit nicht ...
+                          //... die falschen amount-werte gepseichert werden
+    }//ENDE FOR
+  /*  System.out.println("gardenset");
+    for(Field f : gardenset) {
+
+      System.out.println(f);
+    }*/
+
+        for(Field f : gardenset) {    //hier wird dann über alle felder die in einem...
+          b.illegalColoring(f);         //...Garten sind, iteriert, damit diese die Felder um sich herum...
+        }                             //nach der Gartenabstandsregel als ungültig markieren
+      /*  System.out.println("gardenset after ill. color.");
+        for(Field f : gardenset) {
+          System.out.println(f);
+        }
+        System.out.println("fieldset after illegal coloring");*/
+        for(Field f : b.fieldset) {
+          for(Flower flowerx: b.redflowerset) {
+            if(f.equals(flowerx) && (f.getMark() == -1)) { //hier wird das ganz ueberprueft:...
+              b.cleanUpMarks();                             //wenn ein feld gefunden wird, was eine blume auf...
+            }                                             //als markierung hat, wird false zurueckgegeben
+          }
+        }
+        for(Field f : b.fieldset) {
+          System.out.println(f);
+        }
+        b.cleanUpMarks();
+
 
     //checkin checkDitchPositions
   /*  Ditch di = Ditch.parseDitch("{(1,2),(2,1)}");
