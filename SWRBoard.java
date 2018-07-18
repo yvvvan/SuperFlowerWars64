@@ -78,16 +78,53 @@ public class SWRBoard implements Board, Viewable {
     return size;
   }//END GETSIZE
   //============================================================================
-  /**Methode, die die Anzahl der Nachbarn einer Blume oder eines Feldes zurueckgibt*/
-  public int getNeighborAmount (Flower flower) {
-
-    for(Field field : fieldset) {
-      if(field.equals(flower)) {
-        return field.getNeighborAmount();
+  /**Methode, die die Anzahl der Nachbarn einer Blume oder eines Feldes zurueckgibt
+   * author: Ding Zhou
+   */
+  public int getNeighborAmount (Flower flower,PlayerColor color) {
+    HashSet<Flower> myset=null;
+    if(color==PlayerColor.Red){
+      myset=redflowerset; }
+    else{
+      myset=blueflowerset;
+    }
+    int number=0;
+    for(Flower f:myset){
+      if(isNeighbours (f,flower)){
+        number++;
       }
     }
-    return 0;
-  }//END GETNEIGHBORAMOUNT
+    return number;
+  }//ENDE GETNEIGHBORAMOUNT
+  //============================================================================
+  /**Hilfsmethode für getNeighborAmount
+  * author: Ding Zhou
+  */
+  public boolean isNeighbours (Flower flower1,Flower flower2){
+    Position pos1_1=flower1.getFirst();
+    Position pos1_2=flower1.getSecond();
+    Position pos1_3=flower1.getThird();
+    ArrayList<Position> position=new ArrayList<Position>();
+    position.add(pos1_1);
+    position.add(pos1_2);
+    position.add(pos1_3);
+    Position pos2_1=flower2.getFirst();
+    Position pos2_2=flower2.getSecond();
+    Position pos2_3=flower2.getThird();
+    Position []pos={pos2_1,pos2_2,pos2_3};
+    int number=0;
+    for(int i=0;i<3;i++){
+      if(position.contains(pos[i])){
+        number++;
+      }
+    }
+    if(number==2){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }//ENDE ISNEIGHBORS
   //============================================================================
   /**Hilfsmethode fuer die Initialisierung des Spielbretts mit Spielfeldern.
    * Diese Methode konstruiert Felder die aufrecht stehen.
@@ -96,7 +133,6 @@ public class SWRBoard implements Board, Viewable {
 
     Field f = new Field(new Position(i, j), new Position(i, j+1), new Position(i+1, j));
     Field ff = new Field(new Position(i, j+1), new Position(i+1, j), new Position(i+1, j+1));//Vertikaler nachbar
-
 
     if((i+j) < (size + 1)) {//WENN I+J == SIZE, IST MAN AN DER RECHTEN KANTE ANGEKOMMEN!
       ff = invertedfieldconstructor(i, j+1, coll);
@@ -174,8 +210,6 @@ public class SWRBoard implements Board, Viewable {
 
     if(status == Status.RedWin || status == Status.BlueWin || status == Status.Draw) {
       throw new IllegalStateException("Illegal");
-      /*System.out.println("Spiel vorbei. Es duerfen keine weiteren Zuege gemacht werden.");
-      return;*/
     }
 
     switch (type) {
@@ -214,11 +248,11 @@ public class SWRBoard implements Board, Viewable {
       case End:
         Collection<Move> possiblemoves = getPossibleMoves();
         for(Move m : possiblemoves) {
-          if(m.getType() == MoveType.Flower) {
-            status = Status.Illegal;
-            return;
-          }
-        }
+          if(m.getType() == MoveType.Flower) {  //da ein legaler Zug mind. 2 Blumen...
+            status = Status.Illegal;            //haben muss,reicht es, beim move-...
+            return;                             //type "end", einfach zu schauen...
+          }                                     //ob noch ein leg. Blumenzug ...
+        }                                       //möglich ist.
         if(getPoints(PlayerColor.Red) > getPoints(PlayerColor.Blue)) {
           status = Status.RedWin;
         }
@@ -253,206 +287,210 @@ public class SWRBoard implements Board, Viewable {
   /*Methode, die die Menge aller gültigen Züge zurückliefert
    * author: Yufan Dong
    */
-     public Collection<Move> getPossibleMoves() {
+  public Collection<Move> getPossibleMoves() {
 
-           HashSet<Ditch> ditchset = new HashSet<Ditch>();
-            ditchset.addAll(redditchset);
-            ditchset.addAll(blueditchset);
+    HashSet<Ditch> ditchset = new HashSet<Ditch>();
+    ditchset.addAll(redditchset);
+    ditchset.addAll(blueditchset);
 
 
-           HashSet<Flower> flowerset = new HashSet<Flower>();
-           flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
+   HashSet<Flower> flowerset = new HashSet<Flower>();
+   flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
 
-           HashSet<Flower> allflowerset = new HashSet<Flower>();
-           allflowerset.addAll(redflowerset);
-           allflowerset.addAll(blueflowerset);
+   HashSet<Flower> allflowerset = new HashSet<Flower>();
+   allflowerset.addAll(redflowerset);
+   allflowerset.addAll(blueflowerset);
 
-           HashSet<Flower> gardenset = new HashSet<Flower>();
-           for(Flower flower : flowerset){
-             for(Field field : fieldset){
-               if(field.equals(flower)){
-                 if(field.getClusteramount() == 4){
-                   gardenset.add(field);
-                 }
-               }
-             }
-           }
+   HashSet<Flower> gardenset = new HashSet<Flower>();
+   for(Flower flower : flowerset){
+     for(Field field : fieldset){
+       if(field.equals(flower)){
+         if(field.getClusteramount() == 4){
+           gardenset.add(field);
+         }
+       }
+     }
+   }
 
-           HashSet<Field> beet3set = new HashSet<Field>();
-           for(Flower flower : flowerset){
-             for(Field field : fieldset){
-               if(field.equals(flower)){
-                 if(field.getClusteramount() == 3){
-                   beet3set.add(field);
-                 }
-               }
-             }
-           }
+   HashSet<Field> beet3set = new HashSet<Field>();
+   for(Flower flower : flowerset){
+     for(Field field : fieldset){
+       if(field.equals(flower)){
+         if(field.getClusteramount() == 3){
+           beet3set.add(field);
+         }
+       }
+     }
+   }
 
-           HashSet<Field> beetNachbarnset = new HashSet<Field>();
-           for(Field flower : beet3set){
-               beetNachbarnset.add(flower.getLeft());
-               beetNachbarnset.add(flower.getRight());
-               beetNachbarnset.add(flower.getVertical());
-           }
-           beetNachbarnset.removeAll(beet3set);
+   HashSet<Field> beetNachbarnset = new HashSet<Field>();
+   for(Field flower : beet3set){
+       beetNachbarnset.add(flower.getLeft());
+       beetNachbarnset.add(flower.getRight());
+       beetNachbarnset.add(flower.getVertical());
+   }
+   beetNachbarnset.removeAll(beet3set);
 
-         //FLOWER
-           HashSet<Flower> unpossibleF = new HashSet<Flower>();
+ //FLOWER
+   HashSet<Flower> unpossibleF = new HashSet<Flower>();
 
-           //alle besizte Field (red+blue)
-           unpossibleF.addAll(redflowerset);
-           unpossibleF.addAll(blueflowerset);
+   //alle besizte Field (red+blue)
+   unpossibleF.addAll(redflowerset);
+   unpossibleF.addAll(blueflowerset);
 
-           //alle nachbarn und ecke von Garten (eigne)
-           for(Flower flower : gardenset){
-             Position[] p =new Position[]{flower.getFirst(),flower.getSecond(),flower.getThird()};
-             for(int i = 0; i<3 ; i++){
-               int a = p[i].getColumn();
-               int b = p[i].getRow();
-               if(a-1>0){
-                 ckadFlower(unpossibleF, p[i], new Position(a-1,b),   new Position(a-1,b+1) );
-                 ckadFlower(unpossibleF, p[i], new Position(a,b+1),   new Position(a-1,b+1) );}
-                 ckadFlower(unpossibleF, p[i], new Position(a,b+1),   new Position(a+1,b) );
-               if(b-1>0){
-                 ckadFlower(unpossibleF, p[i], new Position(a+1,b-1), new Position(a+1,b) );
-                 ckadFlower(unpossibleF, p[i], new Position(a+1,b-1), new Position(a,b-1) );
-                if(a-1>0)
-                 ckadFlower(unpossibleF, p[i], new Position(a-1,b),   new Position(a,b-1) );}
-             }
-           }
+   //alle nachbarn und ecke von Garten (eigne)
+   for(Flower flower : gardenset){
+     Position[] p =new Position[]{flower.getFirst(),flower.getSecond(),flower.getThird()};
+     for(int i = 0; i<3 ; i++){
+       int a = p[i].getColumn();
+       int b = p[i].getRow();
+       if(a-1>0){
+         ckadFlower(unpossibleF, p[i], new Position(a-1,b),   new Position(a-1,b+1) );
+         ckadFlower(unpossibleF, p[i], new Position(a,b+1),   new Position(a-1,b+1) );}
+         ckadFlower(unpossibleF, p[i], new Position(a,b+1),   new Position(a+1,b) );
+       if(b-1>0){
+         ckadFlower(unpossibleF, p[i], new Position(a+1,b-1), new Position(a+1,b) );
+         ckadFlower(unpossibleF, p[i], new Position(a+1,b-1), new Position(a,b-1) );
+        if(a-1>0)
+         ckadFlower(unpossibleF, p[i], new Position(a-1,b),   new Position(a,b-1) );}
+     }
+   }
 
-           //alle Nachbar von ditch (red+blue)
-           for(Ditch d : ditchset){
-             //(a,b) (c,x)
-             int a = d.getFirst().getColumn();
-             int b = d.getFirst().getRow();
-             int c = d.getSecond().getColumn();
-             int x = d.getSecond().getRow();
+   //alle Nachbar von ditch (red+blue)
+   for(Ditch d : ditchset){
+     //(a,b) (c,x)
+     int a = d.getFirst().getColumn();
+     int b = d.getFirst().getRow();
+     int c = d.getSecond().getColumn();
+     int x = d.getSecond().getRow();
 
-             int diff1 = a - c;
-             int diff2 = b - x;
+     int diff1 = a - c;
+     int diff2 = b - x;
 
-             if      (diff1 == 0){ //a = c, in one column: like "/"
-               if(a-1>0)
-               ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a-1,Math.max(b,x)));
-               ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a+1,Math.min(b,x)));
-             }
-             else if (diff2 == 0){ //b = d, in one row: like "-"
-               ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.min(a,c),b+1));
-               if(b-1>0)
-               ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.max(a,c),b-1));
-             }
-             else {  //diff1 !=0 && diff2 != 0      // like "\"
-               ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a,x));
-               ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(c,b));
-             }
-           }
+     if      (diff1 == 0){ //a = c, in one column: like "/"
+       if(a-1>0)
+       ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a-1,Math.max(b,x)));
+       ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a+1,Math.min(b,x)));
+     }
+     else if (diff2 == 0){ //b = d, in one row: like "-"
+       ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.min(a,c),b+1));
+       if(b-1>0)
+       ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(Math.max(a,c),b-1));
+     }
+     else {  //diff1 !=0 && diff2 != 0      // like "\"
+       ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(a,x));
+       ckadFlower(unpossibleF, d.getFirst(), d.getSecond(), new Position(c,b));
+     }
+   }
 
-           HashSet<Move> possibleM = new HashSet<Move>();
-           HashSet<Flower> possibleF = new HashSet<Flower>();
-           possibleF.addAll(fieldset);
-           possibleF.removeAll(unpossibleF);
-           for(Flower f1 : possibleF){
-             for(Flower f2 : possibleF){
-               if (!f1.equals(f2) && (!beetNachbarnset.contains(f1)||!beetNachbarnset.contains(f2))){
-                 Move m = new Move(f1,f2);
-                 possibleM.add(m);
-               }
-             }
-           }
+   HashSet<Move> possibleM = new HashSet<Move>();
+   HashSet<Flower> possibleF = new HashSet<Flower>();
+   possibleF.addAll(fieldset);
+   possibleF.removeAll(unpossibleF);
+   for(Flower f1 : possibleF){
+     for(Flower f2 : possibleF){
+       if (!f1.equals(f2) && (!beetNachbarnset.contains(f1)||!beetNachbarnset.contains(f2))){
+         Move m = new Move(f1,f2);
+         possibleM.add(m);
+       }
+     }
+   }
 
-         //DITCH
-           HashSet<Ditch> possibleD = new HashSet<Ditch>();
+ //DITCH
+   HashSet<Ditch> possibleD = new HashSet<Ditch>();
 
-           HashSet<Position> points = new HashSet<Position>();
-           for(Flower flower : flowerset){
-             points.add(flower.getFirst());
-             points.add(flower.getSecond());
-             points.add(flower.getThird());
-           }
+   HashSet<Position> points = new HashSet<Position>();
+   for(Flower flower : flowerset){
+     points.add(flower.getFirst());
+     points.add(flower.getSecond());
+     points.add(flower.getThird());
+   }
 
-           HashSet<Position> unPossibleP = new HashSet<Position>();
-           for(Ditch d : ditchset){
-             unPossibleP.add(d.getFirst());
-             unPossibleP.add(d.getSecond());
-           }
+   HashSet<Position> unPossibleP = new HashSet<Position>();
+   for(Ditch d : ditchset){
+     unPossibleP.add(d.getFirst());
+     unPossibleP.add(d.getSecond());
+   }
 
-           points.removeAll(unPossibleP);
+   points.removeAll(unPossibleP);
 
-           for(Position p1 : points){
-             for(Position p2 : points){
-               if(!p1.equals(p2)){
-                 int a = p1.getColumn();
-                 int b = p1.getRow();
-                 int c = p2.getColumn();
-                 int d = p2.getRow();
+   for(Position p1 : points){
+     for(Position p2 : points){
+       if(!p1.equals(p2)){
+         int a = p1.getColumn();
+         int b = p1.getRow();
+         int c = p2.getColumn();
+         int d = p2.getRow();
 
-                 int diff1 = Math.abs(a - c);
-                 int diff2 = Math.abs(b - d);
+         int diff1 = Math.abs(a - c);
+         int diff2 = Math.abs(b - d);
 
-               if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(a-c==d-b)){
-                 if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
-                   Flower f1 = (a-1>0)?(new Flower(p1,p2, new Position(a-1,Math.max(b,d)))):null;
-                   Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
-                   ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
-                 }
-                 else if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
-                   Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
-                   Flower f2 = (b-1>0)?(new Flower(p1,p2, new Position(Math.max(a,c),b-1))):null;
-                   ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
-                 }
-                 else{ // (diff1 == 1 && diff2 == 1)                // like "\"
-                   Flower f1 = new Flower(p1,p2, new Position(a,d));
-                   Flower f2 = new Flower(p1,p2, new Position(c,b));
-                   ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
-                 }
+       if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||(a-c==d-b)){
+         if (diff1 == 0 && diff2 == 1){ //a = c, in one column: like "/"
+           Flower f1 = (a-1>0)?(new Flower(p1,p2, new Position(a-1,Math.max(b,d)))):null;
+           Flower f2 = new Flower(p1,p2, new Position(a+1,Math.min(b,d)));
+           ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
+         }
+         else if (diff2 == 0 && diff1 == 1){ //b = d, in one row: like "-"
+           Flower f1 = new Flower(p1,p2, new Position(Math.min(a,c),b+1));
+           Flower f2 = (b-1>0)?(new Flower(p1,p2, new Position(Math.max(a,c),b-1))):null;
+           ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
+         }
+         else{ // (diff1 == 1 && diff2 == 1)                // like "\"
+           Flower f1 = new Flower(p1,p2, new Position(a,d));
+           Flower f2 = new Flower(p1,p2, new Position(c,b));
+           ckadDitch(possibleD,allflowerset,f1,f2,p1,p2);
+         }
 
-                 // if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
-                 //   possibleD.add(new Ditch(p1,p2));
-               }
-               }
-             }
-           }
+         // if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
+         //   possibleD.add(new Ditch(p1,p2));
+       }
+       }
+     }
+   }
 
-             for(Ditch d : possibleD){
-               Move m = new Move(d);
-               possibleM.add(m);
-             }
+     for(Ditch d : possibleD){
+       Move m = new Move(d);
+       possibleM.add(m);
+     }
 
-           //Surrender
-           possibleM.add(new Move(MoveType.Surrender));
+   //Surrender
+   possibleM.add(new Move(MoveType.Surrender));
 
-           return possibleM;
- }//END GETPOSSIBLEMOVES
+   return possibleM;
+  }//END GETPOSSIBLEMOVES
  //============================================================================
- private void ckadDitch(Collection<Ditch> possibleD ,Collection<Flower> allflowerset ,Flower f1,Flower f2,Position p1,Position p2){
+ /**Hilfsmethode für getPossibleMoves
+ * author: Yufan Dong
+ */
+  private void ckadDitch(Collection<Ditch> possibleD ,Collection<Flower> allflowerset ,Flower f1,Flower f2,Position p1,Position p2){
 
    if ((f1==null||!allflowerset.contains(f1))&&(f2==null||!allflowerset.contains(f2)))
      possibleD.add(new Ditch(p1,p2));
 
- }//END CKADDITCH
+   }//END CKADDITCH
  //======================================================================
-
- private void ckadFlower(Collection<Flower> list ,Position p1,Position p2,Position p3){
+ /**Hilfsmethode für getPossibleMoves
+ * author: Yufan Dong
+ */
+  private void ckadFlower(Collection<Flower> list ,Position p1,Position p2,Position p3){
    if((p1!=p2)&&(p2!=p3)&&(p3!=p1)){
-       Position[] p = new Position[]{p1,p2,p3};
-       boolean onBoard = true;
-       for(int i = 0; i<3; i++){
-           int a = p[i].getColumn();
-           int b = p[i].getRow();
-           if(a<0 || b<0 ||(a+b)>size+1){
-               onBoard = false;
-           }
-       }
-       if(onBoard){
-           Flower f = new Flower(p1,p2,p3);
-           if(fieldset.contains(f))
-           list.add(f);
-       }
+    Position[] p = new Position[]{p1,p2,p3};
+    boolean onBoard = true;
+    for(int i = 0; i<3; i++){
+      int a = p[i].getColumn();
+      int b = p[i].getRow();
+      if(a<0 || b<0 ||(a+b)>size+1){
+        onBoard = false;
+      }
+    }
+    if(onBoard){
+      Flower f = new Flower(p1,p2,p3);
+      if(fieldset.contains(f))
+      list.add(f);
+    }
    }
- }//END CKADFLOWER
-
+  }//END CKADFLOWER
   //============================================================================
   /**Methode, die die Menge aller Blumen eines Spielers als Hashset zurueckgibt*/
   public Collection<Flower> getFlowers(final PlayerColor color) {
@@ -647,6 +685,9 @@ public class SWRBoard implements Board, Viewable {
       if(f.getMark() != -2) {//alle Markierungen ausser die Ditch-markierung, da diese global für rot & blau gilt
         f.setMark(0);
       }
+      if(f.getCheck() == true) {
+        f.setCheck(false);
+      }
     }
 
   }//END CLEANUPMARKS
@@ -765,7 +806,6 @@ public class SWRBoard implements Board, Viewable {
     int flowerconnectioncamount = 0; //um herauszufinden, ob auch wirklich 2 blumen verbunden sind, und nicht leere felder an einem Ende sind
     Position pos1 = ditch.getFirst();
     Position pos2 = ditch.getSecond();
-
 
     if(checkDitchPositions(ditch)) {//Legalitaet gecheckt!
       if(isNeighborEmpty(ditch)) {//FELDER WERDEN GLEICHZEITIG UNFRUCHTBAR GEMACHT!
@@ -925,12 +965,10 @@ public class SWRBoard implements Board, Viewable {
         additionalColoring(f, ++mark);
       }
     }
-
     //bisher alle flowercluster in versch. farben makiert
     for(Field f : gardenset) {
       points += p(countingN(f, playerditchset));
     }
-
     cleanUpMarks();
     return points;
   }//END GETPOINTS
@@ -940,10 +978,18 @@ public class SWRBoard implements Board, Viewable {
     //NUR MIT GARDENSET SACHEN AUFRUFEN!
     int anzahl = 0;
 
+    if(field.getClusteramount() == 0) {
+      return anzahl;
+    }
+
     if(!field.getCheck()) {//damit keine dopplungen entstehen
       HashSet<Ditch> tobecheckedset = new HashSet<Ditch>();
       HashSet<Ditch> checkedoffset = new HashSet<Ditch>();
       HashSet<Field> tobecheckedfields = new HashSet<Field>();
+
+      //System.out.println(field);
+    //  System.out.println('\n');
+
 
       checkYourGarden(field, tobecheckedset, playerditchset);
 
@@ -953,7 +999,7 @@ public class SWRBoard implements Board, Viewable {
         }
       }
       for(Field f : tobecheckedfields) {
-        anzahl += countingN(field, playerditchset);
+        anzahl += countingN(f, playerditchset);
       }
 
       if(field.getClusteramount() == 4) {
@@ -967,10 +1013,10 @@ public class SWRBoard implements Board, Viewable {
   /**Hilfsmethode fuer countingN. Alle Felder in demselben Garten wie das auf-
   rufende Feld 'sammeln' alle Graeben ein und checken sich selbst ab*/
   private void checkYourGarden (Field field, HashSet<Ditch> tobecheckedset, HashSet<Ditch> playerditchset) {
-    //UNCHECKED
+
     field.setCheck(true);
       //vv hierfuer brauch ich die Faerbung aus getPoints! vv
-    if(field.getRight() != null) {
+    if(field.getRight() != null) {// alle die die selbe farbe haben, werden abgecheckt
       if(field.getRight().getMark() == field.getMark()) {
         if(!field.getRight().getCheck()) {
           checkYourGarden(field.getRight(), tobecheckedset, playerditchset);
@@ -1000,13 +1046,16 @@ public class SWRBoard implements Board, Viewable {
   //============================================================================
   /**Hilfsmethode fuer getPoints. Berechnet die Punkte eines Garten-
   konglomerats auf Basis der in den Regeln festgelegten Weise*/
-  private int p (int n) {//CHECKED
-
-    if(n == 1) {
+  private int p (int n) {
+    if(n > 1) {
+      return (p(n-1) + n);
+    }
+    else if(n == 1) {
       return 1;
     }
-    else return (p(n-1) + n);
-
+    else {
+      return 0;
+    }
   }//END P
   //============================================================================
   /**Hilfsmethode fuer countingN. addiert alle Felder an dem
@@ -1023,8 +1072,10 @@ public class SWRBoard implements Board, Viewable {
       Aufrufe auf denselben Ditch!*/
 
       for(Field f : fieldset) {
-        if(isDitchConnectedToFlower(ditch, f)) {
-          tobecheckedfields.add(f);
+        if(f.getCheck() == false) {
+          if(isDitchConnectedToFlower(ditch, f)) {
+            tobecheckedfields.add(f);
+          }
         }
       }
 
@@ -1033,7 +1084,7 @@ public class SWRBoard implements Board, Viewable {
 
   public static void main (String[] args) {
 
-    int size = 6;
+    int size = 8;
 
     SWRBoard b = new SWRBoard(size);
 
@@ -1047,26 +1098,82 @@ public class SWRBoard implements Board, Viewable {
 
     //Ditch doe = Ditch.parseDitch("{(4,5),(5,5)}");
 
-    Ditch doi = Ditch.parseDitch("{(3,3),(3,2)}");
+    /*Ditch doi = Ditch.parseDitch("{(3,5),(4,5)}");
+    Ditch dai = Ditch.parseDitch("{(4,2),(5,2)}");
+
     Flower fa = Flower.parseFlower("{(3,2),(3,3),(4,2)}");
     Flower fi = Flower.parseFlower("{(1,4),(2,4),(2,3)}");
     Flower fu = Flower.parseFlower("{(2,3),(3,3),(2,4)}");
-    Flower fe = Flower.parseFlower("{(4,2),(4,1),(3,2)}");
+    Flower fe = Flower.parseFlower("{(2,3),(3,3),(3,2)}");
 
+    Flower f1 = Flower.parseFlower("{(1,5),(2,5),(1,6)}");
+    Flower f2 = Flower.parseFlower("{(2,5),(1,6),(2,6)}");
+    Flower f3 = Flower.parseFlower("{(1,6),(2,6),(1,7)}");
+    Flower f4 = Flower.parseFlower("{(2,5),(2,6),(3,5)}");
 
+    Flower fa1 = Flower.parseFlower("{(4,6),(4,5),(5,5)}");
+    Flower fa2 = Flower.parseFlower("{(4,5),(4,4),(5,4)}");
+    Flower fa3 = Flower.parseFlower("{(4,5),(5,5),(5,4)}");
+    Flower fa4 = Flower.parseFlower("{(5,4),(5,5),(6,4)}");
+
+    Flower fi1 = Flower.parseFlower("{(5,3),(6,3),(6,2)}");
+    Flower fi2 = Flower.parseFlower("{(5,3),(6,2),(5,2)}");
+    Flower fi3 = Flower.parseFlower("{(5,1),(5,2),(6,1)}");
+    Flower fi4 = Flower.parseFlower("{(5,2),(6,2),(6,1)}");
 
     Move mf = new Move(fa, fe);
     b.make(mf);
     b.nextPlayer();
+
     Move mv = new Move(fi, fu);
     b.make(mv);
-    Move m = new Move(doi);
-    b.make(m);
-    System.out.println(b.getStatus());
 
-    for(Field f : b.fieldset) {
+
+    Move m1 = new Move(f1, f2);
+    b.make(m1);
+    b.nextPlayer();
+
+    Move m2 = new Move(f3, f4);
+    b.make(m2);
+
+
+    Move m3 = new Move(fa1, fa2);
+    b.make(m3);
+    b.nextPlayer();
+
+    Move m4 = new Move(fa3, fa4);
+    b.make(m4);
+
+
+    Move m5 = new Move(fi1, fi2);
+    b.make(m5);
+    b.nextPlayer();
+
+    Move m6 = new Move(fi3, fi4);
+    b.make(m6);
+
+
+
+  /*  Move m = new Move(doi);
+    b.make(m);
+    b.nextPlayer();
+
+
+    Move mo = new Move(dai);
+    b.make(mo);
+    b.nextPlayer();*/
+
+
+    /*for(Field f : b.fieldset) {
       System.out.println(f);
     }
+
+
+    System.out.println(b.getPoints(PlayerColor.Red));
+    System.out.println(b.getPoints(PlayerColor.Blue));
+
+    System.out.println(b.getStatus());
+
 
 
     //System.out.println(doa.equals(doe));
@@ -1116,7 +1223,7 @@ public class SWRBoard implements Board, Viewable {
     Ditch dae = Ditch.parseDitch("{(1,1),(1,2)}");
 
     System.out.println(b.isNeighborEmpty(da));
-    System.out.println(b.isNeighborEmpty(doe));
+    System.out.println(b.isNeighborEmpty(doe));smite linugee
     System.out.println(b.isNeighborEmpty(dae));*/
 
     /*//checking isNeighborEmpty on filled Board
