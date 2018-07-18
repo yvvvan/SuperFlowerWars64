@@ -30,10 +30,6 @@ public class MyViewer implements Viewer {
            return gameboard.getStatus();
        }
 
-       public int getNeighborAmount(Flower flower) {
-         return gameboard.getNeighborAmount(flower);
-       }
-
        public Collection<Flower> getFlowers(final PlayerColor color) {
            return gameboard.getFlowers(color);
        }
