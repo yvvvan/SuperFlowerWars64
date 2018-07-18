@@ -110,8 +110,8 @@ public class Field extends Flower{
 
   @Override
   public String toString() {
-    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + getClusteramount() + " " + getMark() + "\n";
-  }//TESTING!!!!!!!!!!!!!!
+    return "Field " + getFirst() + ", " + getSecond() + ", " + getThird() + getClusteramount() + " " + getMark() + " " + getColor() + " " + getCheck() + "\n";
+  }
   //============================================================================
 
   public void setColor(PlayerColor c) {
