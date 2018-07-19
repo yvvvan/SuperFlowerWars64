@@ -84,7 +84,7 @@ public class SWRBoard implements Board, Viewable {
    * @return Viewer Object
    */
   @Override
-  public Viewer viewer() {
+  public MyViewer viewer() {
 
     return new MyViewer(this, current, status);
 
@@ -329,6 +329,94 @@ public class SWRBoard implements Board, Viewable {
     }
   }//END NEXTPLAYER
   //============================================================================
+  //============================================================================
+  /**
+   * Methode, die die Menge aller gueltigen Zuege zurueckliefert
+   * @author Yufan Dong
+   * @return Menge der moegliche Zuege
+   */
+     public Collection<Move> getPossibleMovesFl() {
+
+           HashSet<Move> possibleM = new HashSet<Move>();
+
+           HashSet<Ditch> ditchset = new HashSet<Ditch>();
+            ditchset.addAll(redditchset);
+            ditchset.addAll(blueditchset);
+
+
+           HashSet<Flower> flowerset = new HashSet<Flower>();
+           flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
+
+           HashSet<Flower> allflowerset = new HashSet<Flower>();
+           allflowerset.addAll(redflowerset);
+           allflowerset.addAll(blueflowerset);
+
+           HashSet<Field> gardenset = new HashSet<Field>();
+           for(Flower flower : flowerset)
+             for(Field field : fieldset)
+               if(field.equals(flower))
+                 if(field.getClusteramount() == 4)
+                   gardenset.add(field);
+            // System.out.println("gt"+gardenset);
+
+           HashSet<Field> beet3set = new HashSet<Field>();
+           for(Flower flower : flowerset)
+             for(Field field : fieldset)
+               if (field.equals(flower))
+                if(field.getClusteramount() == 3)
+                   beet3set.add(field);
+          // System.out.println("bts"+beet3set);
+
+           HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
+           for(Field flower : beet3set){
+               beetNachbarnset.add(flower.getLeft());
+               beetNachbarnset.add(flower.getRight());
+               beetNachbarnset.add(flower.getVertical());
+           }
+           beetNachbarnset.remove(null);
+           beetNachbarnset.removeAll(beet3set);
+           // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
+          //
+
+      //FLOWER----------------------------------------------------------------
+
+           HashSet<Flower> possibleF = new HashSet<Flower>();
+           possibleF.addAll(fieldset);
+
+
+           //alle besizte Field (red+blue)
+           possibleF.removeAll(redflowerset);
+           possibleF.removeAll(blueflowerset);
+
+           //alle felder von garten
+           possibleF.removeAll(aroundBeet(gardenset));
+
+           //alle Nachbar von ditch (red+blue)
+           for(Ditch d : ditchset){
+             possibleF.removeAll(findFieldsOfDitch(d));
+           }
+
+           possibleF.remove(null);
+
+           HashSet<Move> myM = new HashSet<Move>();
+
+           for(Flower f1 : possibleF){
+             for(Flower f2 : possibleF){
+               if (!f1.equals(f2)){
+                 Move n = new Move(f1,f2);
+                 if(myM.add(n)){
+                   if (!isBeetNachbar(f1,f2)){
+                     Move m = new Move(f1,f2);
+                     possibleM.add(m);
+                   }
+                 }
+               }
+             }
+           }
+           possibleM.remove(null);
+           return possibleM;
+         }
+  //============================================================================
   /**
    * Methode, die die Menge aller gueltigen Zuege zurueckliefert
    * @author Yufan Dong
@@ -450,7 +538,7 @@ public class SWRBoard implements Board, Viewable {
                 if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||((a-c==d-b)&&diff1==1)){
                   Ditch one = new Ditch(p1,p2);
           // Punkte von Ditch koennen nicht von einer Blume
-                  if (isNeighborEmpty(one)) possibleD.add(one);
+                  if (isNEmpty(one)) possibleD.add(one);
                 }
                }
 
@@ -467,12 +555,23 @@ public class SWRBoard implements Board, Viewable {
            return possibleM;
  }//END GETPOSSIBLEMOVES
  //============================================================================
+ private boolean isNEmpty(Ditch d){
+   HashSet<Flower> allflowerset = new HashSet<Flower>();
+   allflowerset.addAll(redflowerset);
+   allflowerset.addAll(blueflowerset);
+   for(Flower flower : allflowerset){
+     HashSet<Position> p =new HashSet<Position>();
+     p.add(flower.getFirst());p.add(flower.getSecond());p.add(flower.getThird());
+     if(p.contains(d.getFirst())&&p.contains(d.getSecond())) return false;
+   }
+   return true;
+ //============================================================================
  /**
   * Hilfesmethode, wird gepruefte, ob f1 und f2 miteinandren beeinflussen koennen
   * @author Yufan Dong
   * @param  f1              Blume1
   * @param  f2              Blume2
-  * @return                 ob f1 <-> f2 beeinflussen koennen
+  * @return                 ob f1 , f2 miteinandren beeinflussen koennen
   */
  private boolean isBeetNachbar( Flower f1, Flower f2){
 
@@ -493,7 +592,8 @@ public class SWRBoard implements Board, Viewable {
        }
      }
    }
-   if(ck!=1) System.out.println("FFFFFFFFFFFFFFFFFF1"); //check ob in einer Reihefolge ist
+   //check ob in einer Reihefolge ist
+   if(ck!=1) System.out.println("FFFFFFFFFFFFFFFFFF1");
   for(Field f : fieldset){
      if(f.equals(f2)){
        ck++;
@@ -1104,9 +1204,12 @@ private void updateBs(Field f){
          return false;
        }
      }
+     System.out.println(foundfields.size());
+     System.out.println(markierte.size());
+     if(markierte.size()==2){
      for(Field f : markierte) {
        f.setMark(-2);//ditch unfruchtbarkeitsmarkierung
-     }
+     }}
      return true;
 
 
@@ -1303,12 +1406,14 @@ private void updateBs(Field f){
 
    }//END FINDFIELDS
    //============================================================================
+   public HashSet<Field> getField(){
+     return fieldset;
+   }
+   //============================================================================
 
    public static void main (String[] args) {
 
-     int size = 8;
 
-     SWRBoard b = new SWRBoard(size);
 
      /*System.out.println(b.getCurrentPlayer());
      b.nextPlayer();
@@ -1483,66 +1588,94 @@ private void updateBs(Field f){
      }
      //int x = b.getPoints(b.getCurrentPlayer());*/
      //System.out.println(b.status);
+     //S
+     //S
+
+     int size = 4;
+
+     SWRBoard b = new SWRBoard(size);
 
 
-   /*  Flower flower = new Flower(new Position(2,5), new Position(2,4), new Position(3,4));
-     Flower flower1 = new Flower(new Position(2,4), new Position(3,4), new Position(3,3));
-     Flower flower2 = new Flower(new Position(3,3), new Position(3,4), new Position(4,3));
-     Flower flower3 = new Flower(new Position(3,3), new Position(4,3), new Position(4,2));
+     Flower flower = new Flower(new Position(1,1), new Position(1,2), new Position(2,1));
+     Flower flower1 = new Flower(new Position(1,2), new Position(2,1), new Position(2,2));
+     Flower flower2 = new Flower(new Position(1,4), new Position(1,3), new Position(2,3));
+     Flower flower3 = new Flower(new Position(1,3), new Position(2,2), new Position(2,3));
 
-     Flower flower5 = new Flower(new Position(1,2), new Position(2,2), new Position(1,3));
-     Flower flower6 = new Flower(new Position(2,2), new Position(3,2), new Position(2,3));
-     Flower flower7 = new Flower(new Position(2,2), new Position(1,3), new Position(2,3));
-     Flower flower8 = new Flower(new Position(1,3), new Position(2,3), new Position(1,4));
+     Flower flower5 = new Flower(new Position(2,1), new Position(2,2), new Position(3,1));
+     Flower flower6 = new Flower(new Position(3,1), new Position(3,2), new Position(4,1));
+     Flower flower7 = new Flower(new Position(1,4), new Position(2,4), new Position(2,3));
+     Flower flower8 = new Flower(new Position(2,3), new Position(2,4), new Position(3,3));
+     //
+     // //Flower flower4 = new Flower(new Position(3,2), new Position(2,3), new Position(3,3));
+     //
+     // System.out.println(b.getStatus());
+     Move move = new Move(flower,flower1);
+     Move move2 = new Move(flower2,flower3);
+     Move move3 = new Move(flower6,flower5);
 
-     //Flower flower4 = new Flower(new Position(3,2), new Position(2,3), new Position(3,3));
+     Move move4 = new Move(flower7,flower8);
+
+     // System.out.println(move);
+     b.make(move);
+     // System.out.println(b.getStatus());
+     //
+     b.make(move2);
+     b.make(move4);
+     b.make(move3);
+
+     Collection<Move> pm = b.getPossibleMoves();
+     System.out.println(pm.size());
+     System.out.println(pm);
+     // System.out.println(b.getStatus());
+     // System.out.println(b.getField());
 
 
-     b.redflowerset.add(flower);
-     b.redflowerset.add(flower1);
-     b.redflowerset.add(flower2);
-     b.redflowerset.add(flower3);
-     b.redflowerset.add(flower5);
-     b.redflowerset.add(flower6);
-     b.redflowerset.add(flower7);
-     b.redflowerset.add(flower8);
+
+     // b.redflowerset.add(flower);
+     // b.redflowerset.add(flower1);
+     // b.redflowerset.add(flower2);
+     // b.redflowerset.add(flower3);
+     // b.redflowerset.add(flower5);
+     // b.redflowerset.add(flower6);
+     // b.redflowerset.add(flower7);
+     // b.redflowerset.add(flower8);
 
 
 
      //b.redflowerset.add(flower4);
-
-     for(Field f : b.fieldset) {
-       System.out.println(f);
-     }
-     System.out.println("initial end");
-     int mark = 1; //1 = grau, andere ints sind andere farben fuer die felder
-     int amount = 0; // fuer schritt 7
-     //-vv Alle flowers kriegen eine graue Faerbung vv---------------------------
-     for(Flower flowery : b.redflowerset) {
-       for(Field field : b.fieldset) {
-         if(field.equals(flowery)) {
-           if(field.getMark() != -2) {//-2 ->wenn ditch da ist
-             field.setMark(mark);
-           }
-           else {
-             b.cleanUpMarks();
-           }
-         }
-       }
-     }//^^ --------------------------------------------------------------------^^
-     for(Field f : b.fieldset) {
-       System.out.println(f);
-       System.out.println("fVertical = " + f.getVertical());
-     }
-     System.out.println("after mark end");
-     //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv
-     for(Field f : b.fieldset) {
-       //System.out.println("this is called by  col. : " + f + " " + f.getVertical());
-       if(f.getMark() == 1) {
-         System.out.println("this is called by add col. : " + f + " " + f.getVertical());
-         b.additionalColoring(f, ++mark);
-       }//Schritte 3-6
-     }//^^---------------------------------------------------------------------^^
+     //
+     // for(Field f : b.fieldset) {
+     //   System.out.println(f);
+     // }
+     // System.out.println("initial end");
+     // int mark = 1; //1 = grau, andere ints sind andere farben fuer die felder
+     // int amount = 0; // fuer schritt 7
+     // //-vv Alle flowers kriegen eine graue Faerbung vv---------------------------
+     // for(Flower flowery : b.redflowerset) {
+     //   for(Field field : b.fieldset) {
+     //     if(field.equals(flowery)) {
+     //       if(field.getMark() != -2) {//-2 ->wenn ditch da ist
+     //         field.setMark(mark);
+     //       }
+     //       else {
+     //         b.cleanUpMarks();
+     //       }
+     //     }
+     //   }
+     // }//^^ --------------------------------------------------------------------^^
+     // for(Field f : b.fieldset) {
+     //   System.out.println(f);
+     //   System.out.println("fVertical = " + f.getVertical());
+     // }
+     // System.out.println("after mark end");
+     // //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv
+     // for(Field f : b.fieldset) {
+     //   //System.out.println("this is called by  col. : " + f + " " + f.getVertical());
+     //   if(f.getMark() == 1) {
+     //     System.out.println("this is called by add col. : " + f + " " + f.getVertical());
+     //     b.additionalColoring(f, ++mark);
+     //   }//Schritte 3-6
+     // }//^^---------------------------------------------------------------------^^
      /*for(Field f : b.fieldset) {
        System.out.println(f);
      }*/
@@ -1628,6 +1761,4 @@ private void updateBs(Field f){
 
    }//END MAIN
    //============================================================================
-
-
  }//END CLASS
