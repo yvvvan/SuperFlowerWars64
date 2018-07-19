@@ -1,0 +1,45 @@
+<project name="project" default="javadoc" basedir=".">
+
+	  <property name="src" location="src"/>
+	  <property name="build" location="build"/>
+	  <property name="doc" location="doc"/>
+
+
+	  <!-- creates needed folders-->
+	  <target name="initialize">
+	  	<mkdir dir="${build}"/>
+	  	<mkdir dir="${doc}"/>
+	  </target>
+
+	  <target name="compile" depends="initialize">
+
+			<javac srcdir="${src}"
+       destdir="${build}"
+       classpath="${jarfile}"
+			 includeantruntime="false">
+  	 	<compilerarg value="-Xlint"/>
+	 		</javac>
+
+	  </target>
+
+		<target name="jar">
+			<jar destfile = "./SFW64.jar" basedir="${build}">
+				<manifest>
+					<attribute 	name="Main-Class"
+											value="superflowerwars64.SFW64"/>
+				</manifest>
+				<!--<delete dir = "${build}"/>-->
+			</jar>
+		</target>
+
+
+
+	  <target name="javadoc" depends="initialize, compile, jar">
+	  	<javadoc sourcepath="${src}" destdir="${doc}" access="private">
+	  		<fileset dir="${src}" />
+	  	</javadoc>
+	  </target>
+
+
+
+</project>
