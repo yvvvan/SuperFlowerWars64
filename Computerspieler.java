@@ -1,7 +1,7 @@
-package flowerwarspp.player;
+package app.player;
 
 import flowerwarspp.preset.*;
-import superflowerwars64.*;
+import app.superflowerwars64.*;
 import java.util.*;
 import java.rmi.*;
 
@@ -36,7 +36,7 @@ public class Computerspieler implements Player{
      * der Klassen Flower oder Ditch enthält, die ihrerseits nur Referenzen
      * auf Objekte der Klasse Position enthalten.]
      * @return [Move]
-     */
+     *///yf checked
     public Move request() throws Exception, RemoteException{
       if(check==1){
         MyViewer myviewer=new MyViewer(this.board,this.mycolor,this.board.getStatus());//ich brauche ein Viewer von my selbst Board
@@ -47,6 +47,7 @@ public class Computerspieler implements Player{
         Random random=new Random();
         int nextmove=random.nextInt(listsize);//bekomme ich ein random index von possiblemoves
         Move myMove = possiblemove.get(nextmove);//wechsele ich random index zu move
+        // Move myMove = possiblemove.get(0);
         board.make(myMove);
         check=2;
         return myMove;
@@ -67,7 +68,7 @@ public class Computerspieler implements Player{
         }
         check=3;
       }else{
-        throw new Exception("Es ist nicht in richtig Reihenfolge!");
+        throw new Exception("Es ist nicht in richtig Reihenfolge!2");
       }
     }
     /*eingabe : opponent Move + status des letzen Zuges
@@ -76,9 +77,11 @@ public class Computerspieler implements Player{
      * und im Parameter status Informationen über diesen Zug.]
      * @param opponentMove [opponent move]
      * @param status       [Status des letzten Zuges]
-     */
+     *///yf checked
     public void update(Move opponentMove, Status status) throws Exception, RemoteException{
-      if(status == Status.Ok){
+      // System.out.println(status);
+      if(check != 3) throw new Exception("Es ist nicht in richtig Reihenfolge!");
+      if(status != Status.Illegal){ /*改正*/
         board.make(opponentMove);
         Status mystatus=board.getStatus();
         if(status!=mystatus){
@@ -86,7 +89,7 @@ public class Computerspieler implements Player{
         }
         check=1;
       }else{
-        throw new Exception("Es ist nicht in richtig Reihenfolge!");
+        throw new Exception("Es ist nicht in richtig Reihenfolge!1");
       }
 
     }
@@ -96,13 +99,13 @@ public class Computerspieler implements Player{
      *Die Spielerfarbe ist einer der beiden Werte der Enumeration flowerwarspp.preset.
      *PlayerColor und kann die Werte Red und Blue annehmen.
      * @param boardSize [Die Größe von Spielbrett]
-     * @param color     [Die Farbe von diese Spieler Object ]
-     */
+     * @param color     [Die Farbe von diese Spieler Object]
+     *///checked by yf.
     public void init(int boardSize, PlayerColor color) throws Exception, RemoteException{
       if(check==0){
          board = new SWRBoard(boardSize);
          mycolor = color;
-         check=1;
+         check=(color==PlayerColor.Red)?1:3;
       }else{
         throw new Exception("Es ist nicht in richtige Reihenfolge!");
       }
