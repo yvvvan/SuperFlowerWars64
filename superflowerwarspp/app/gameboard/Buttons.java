@@ -14,6 +14,8 @@ import java.awt.image.*;
 */
 
 public class Buttons extends JPanel {
+
+    private GameboardGUI gGUI;
     /**
         * Ein Zug vom Typ {@link MoveType#Surrender}
     */
@@ -28,7 +30,8 @@ public class Buttons extends JPanel {
         * {@link ActionListener} für jeden Button. Wenn ein Button
         * angecklickt wird, werdern die entsprechende Züge erzeugt.
     */
-    public Buttons() {
+    public Buttons(GameboardGUI gGUI) {
+        this.gGUI = gGUI;
         setBackground(new Color(255,140,0));
         setLayout(new BorderLayout());
         JButton giveUpButton = new JButton("Give up");
@@ -43,6 +46,7 @@ public class Buttons extends JPanel {
                System.out.println("Give up");
                MoveType s = MoveType.Surrender;
                giveUpMove = new Move(s);
+               gGUI.handleLastMove(giveUpMove);
            }
         });
 		giveUpButton.setToolTipText("You can give up if ....");
@@ -52,6 +56,7 @@ public class Buttons extends JPanel {
                 System.out.println("End Game");
                 MoveType s = MoveType.End;
                 endGameMove = new Move(s);
+                gGUI.handleLastMove(endGameMove);
 
 			}
 		});
@@ -59,7 +64,6 @@ public class Buttons extends JPanel {
         add(giveUpButton, BorderLayout.NORTH);
         add(Box.createRigidArea(new Dimension(5,5)), BorderLayout.CENTER);
         add(end, BorderLayout.SOUTH);
-
     }
 
     /**

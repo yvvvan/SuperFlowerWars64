@@ -159,17 +159,60 @@ public class GameboardGUI extends JPanel {
         this.myViewer = myViewer;
     }
 
+    public void paintFlowerMove(int indTriangle) {
+        Polygon poly = polyArray.get(indTriangle);
+        trianglesArray[indTriangle].setTriangleClicked(true);
+        colorTriangle[indTriangle] = new Color(204,51,51);
+        Graphics gr = getGraphics();
+        gr.setColor(new Color(204,51,51));
 
-    public synchronized void handleLastMove(Move lastMove) {
-        Collection<Move> posMoves = myViewer.getPossibleMoves();
-        System.out.println("SIZE OF COLLECTION: " + posMoves.size());
-        do {
+        int[] tmpX = trianglesArray[polyArray.indexOf(poly)].getXpoints();
+        int[] tmpY = trianglesArray[polyArray.indexOf(poly)].getYpoints();
+
+        if (tmpY[0] == tmpY[1]) {
+            tmpX[0] -= 1;
+            tmpX[2] -= 1;
+        }
+        else {
+            tmpX[2] -= 2;
+            tmpX[0] -= 8;
+            tmpY[0] -= 9;
+            tmpY[2] += 2;
+            tmpY[1] += 1;
+            }
+        gr.fillPolygon(tmpX, tmpY, 3);
+    }
+
+    public void paintDitchMove(int indLine) {
+        Line l = linesArray.get(indLine);
+        l.setLineClicked();
+        colorLine[indLine] = new Color(222, 49, 99);
+        Graphics g = getGraphics();
+        Graphics2D gr = (Graphics2D) g;
+        gr.setColor(new Color(222, 49, 99));
+        gr.setStroke(new BasicStroke(3));
+        System.out.println(l);
+        if (l.getY1() == l.getY2()) {
+            gr.drawLine(l.getX1()+2, l.getY1()+1, l.getX2()+2, l.getY2()+1);
+        }
+        else if (l.getY1() < l.getY2()){
+            gr.drawLine(l.getX1()-2, l.getY1(), l.getX2()-2, l.getY2());
+        }
+        else {
+             gr.drawLine(l.getX1()+1, l.getY1(), l.getX2()-1, l.getY2());
+        }
+    }
+
+    public void handleLastMove(Move lastMove) {
+        //Collection<Move> posMoves = myViewer.getPossibleMoves();
+        //System.out.println("SIZE OF COLLECTION: " + posMoves.size());
+        /*do {
             try{
-              wait();
+              this.wait();
             } catch (Exception e) {
               e.printStackTrace();
             }
-        } while (!posMoves.contains(getNewMove()));
+        } while (!posMoves.contains(getNewMove()));*/
         System.out.println("\nMOVE TYPE: " + lastMove.getType() + "\n");
         ArrayList<Position> pos = new ArrayList<Position>();
         Flower flower1;
@@ -192,51 +235,50 @@ public class GameboardGUI extends JPanel {
                 }
             }
             pos.clear();
-            flower2 = lastMove.getSecondFlower();
-            pos.add(flower2.getFirst());
-            pos.add(flower2.getSecond());
-            pos.add(flower2.getThird());
-            Collections.sort(pos);
-
-            posArr = pos.toArray(new Position[pos.size()]);
-            for (Position[] posCnt : trianglesPositionsArray) {
-                if (posCnt[0] == posArr[0] && posCnt[1] == posArr[1] && posCnt[2] == posArr[2]) {
-                    indexSecondFlower = trianglesPositionsArray.indexOf(posCnt);
-                    colorTriangle[indexSecondFlower] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(204,51,51)) : (new Color(65, 105, 225)));
-                     System.out.println("Second Flower Clicked: " + indexSecondFlower);
-                    break;
+            if (lastMove.getSecondFlower() != null) {
+                flower2 = lastMove.getSecondFlower();
+                pos.add(flower2.getFirst());
+                pos.add(flower2.getSecond());
+                pos.add(flower2.getThird());
+                Collections.sort(pos);
+                posArr = pos.toArray(new Position[pos.size()]);
+                for (Position[] posCnt : trianglesPositionsArray) {
+                    if (posCnt[0] == posArr[0] && posCnt[1] == posArr[1] && posCnt[2] == posArr[2]) {
+                        indexSecondFlower = trianglesPositionsArray.indexOf(posCnt);
+                        colorTriangle[indexSecondFlower] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(204,51,51)) : (new Color(65, 105, 225)));
+                        System.out.println("Second Flower Clicked: " + indexSecondFlower);
+                        paintFlowerMove(indexSecondFlower);
+                        break;
+                    }
                 }
+                pos.clear();
             }
-            pos.clear();
-            repaintGameboard();
+
         }
         else if (lastMove.getType() == MoveType.Ditch) {
             ditch = lastMove.getDitch();
             pos.add(ditch.getFirst());
-            System.out.println("OOOOOO: " + pos.get(0));
             pos.add(ditch.getSecond());
-            System.out.println("111111: " + pos.get(1));
             Collections.sort(pos);
-            for (int i = 0; i < pos.size(); i++) {
-                System.out.println(pos.get(i));
-            }
             posArr = pos.toArray(new Position[pos.size()]);
+            for(int z = 0; z < posArr.length; z++) {
+                System.out.println(posArr[z]);
+            }
             for (Position[] posCnt : linesPositionsArray) {
-                System.out.println("FOR-LOOP");
                 if ((posCnt[0] == posArr[0]) && (posCnt[1] == posArr[1])) {
                     indexDitch = linesPositionsArray.indexOf(posCnt);
-                    colorLine[indexDitch] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(222, 49, 99)) : (new Color(31, 117, 254)));
-                    System.out.println("Ditch Clicked in handleLastMove: " + indexDitch);
+                    System.out.println("\nDITCH INDEX = " + indexDitch + "\n");
+                    //colorLine[indexDitch] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(222, 49, 99)) : (new Color(31, 117, 254)));
+                    paintDitchMove(indexDitch);
                     break;
                 }
             }
             pos.clear();
-            repaintGameboard();
         }
         else if (lastMove.getType() == MoveType.Surrender) {
             Graphics gr = getGraphics();
-            gr.drawString("Surrender", 100, 100);
-            System.out.println("Surrender");
+            gr.setFont(new Font("Arial Black", Font.BOLD, 60));
+            gr.drawString("Surrender", 100, 500);
         }
         else {
             Graphics gr = getGraphics();
@@ -244,8 +286,6 @@ public class GameboardGUI extends JPanel {
             System.out.println("Won");
         }
     }
-
-
     /**
         * Konstruktor der Klasse.
         * Enthält {@link WindowStateListener}, der neue Werte für {@link #panelWidth} und {@link #panelHeight} einsetzt,
@@ -299,10 +339,10 @@ public class GameboardGUI extends JPanel {
         init_position();
 
         repaintGameboard();
-        int mkl = 0;
+        /*int mkl = 0;
         for (Position[] l : linesPositionsArray) {
             System.out.println((mkl++) + " : " + l[0] + "," + l[1]);
-        }
+        }*/
 
         this.addComponentListener(new ComponentAdapter() {
             @Override
@@ -311,7 +351,6 @@ public class GameboardGUI extends JPanel {
                 panelWidth = frame.getWidth();
             }
         });
-
         addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 System.out.println("Here");
@@ -319,7 +358,6 @@ public class GameboardGUI extends JPanel {
                 double shapeSize = 5;
                 double xClick = e.getX()-shapeSize/2;
                 double yClick = e.getY()-shapeSize/2;
-                System.out.println("\nSIZE LINESARRAY: " + linesArray.size() + "\n");
                 for (Line l : linesArray) {
                   if (l.getLine().intersects(xClick, yClick, shapeSize, shapeSize) && (!linesArray.get(linesArray.indexOf(l)).isLineClicked())) {
                     System.out.println("Clicked Line");
@@ -330,29 +368,10 @@ public class GameboardGUI extends JPanel {
                               Ditch d = new Ditch(linesPositionsArray.get(indexLine)[0], linesPositionsArray.get(indexLine)[1]);
                               setDitch(d);
                               newMove = new Move(d);
-                              System.out.println("MoveType = " + newMove.getType());
-                              System.out.println("Ditch Clicked in Listener: " + indexDitch);
                               ditch = null;
                               handleLastMove(newMove);
                               notify();
                           }
-
-                    }
-                    linesArray.get(indexLine).setLineClicked();
-                    colorLine[indexLine] = new Color(222, 49, 99);
-                    Graphics g = getGraphics();
-                    Graphics2D gr = (Graphics2D) g;
-                    gr.setColor(new Color(222, 49, 99));
-                    gr.setStroke(new BasicStroke(3));
-                    System.out.println(l);
-                    if (l.getY1() == l.getY2()) {
-                        gr.drawLine(l.getX1()+2, l.getY1()+1, l.getX2()+2, l.getY2()+1);
-                    }
-                    else if (l.getY1() < l.getY2()){
-                        gr.drawLine(l.getX1()-2, l.getY1(), l.getX2()-2, l.getY2());
-                    }
-                    else {
-                         gr.drawLine(l.getX1()+1, l.getY1(), l.getX2()-1, l.getY2());
                     }
                     break;
                   }
@@ -360,62 +379,34 @@ public class GameboardGUI extends JPanel {
 
                 Point p = new Point(e.getX(), e.getY());
 
-                    for (Polygon poly : polyArray) {
-                        if (!alreadyClickedLine && poly.contains(p) && (!trianglesArray[polyArray.indexOf(poly)].isTriangleClicked())) {
+                for (Polygon poly : polyArray) {
+                    if (!alreadyClickedLine && poly.contains(p) && (!trianglesArray[polyArray.indexOf(poly)].isTriangleClicked())) {
 
-                            System.out.println("Clicked triangle");
-                            int indexTriangle = polyArray.indexOf(poly);
-
-                            synchronized(this) {
-                                if (firstFlower == null) {
-                                  Flower fstFl = new Flower(trianglesPositionsArray.get(indexTriangle)[0], trianglesPositionsArray.get(indexTriangle)[1], trianglesPositionsArray.get(indexTriangle)[2]);
-                                  setFirstFlower(fstFl);
-                                }
-                                else if (secondFlower == null) {
-                                  Flower sndFl = new Flower(trianglesPositionsArray.get(indexTriangle)[0], trianglesPositionsArray.get(indexTriangle)[1], trianglesPositionsArray.get(indexTriangle)[2]);
-                                  setSecondFlower(sndFl);
-                                  newMove = new Move(firstFlower, secondFlower);
-                                  firstFlower = null;
-                                  secondFlower = null;
-                                  //handleLastMove(newMove);
-                                  System.out.println("Flowers Clicked: " + indexFirstFlower + "   " + indexSecondFlower );
-                                  notify();
-                                }
-                                /*else {
-                                  newMove = new Move(firstFlower, secondFlower);
-                                  firstFlower = null;
-                                  secondFlower = null;
-                                  //handleLastMove(newMove);
-                                  System.out.println("Flowers Clicked: " + indexFirstFlower + "   " + indexSecondFlower );
-                                  notify();
-                              }*/
-
+                        System.out.println("Clicked triangle");
+                        //int indexTriangle = polyArray.indexOf(poly);
+                        synchronized(gui) {
+                            if (firstFlower == null) {
+                              Flower fstFl = new Flower(trianglesPositionsArray.get(indexFirstFlower)[0], trianglesPositionsArray.get(indexFirstFlower)[1], trianglesPositionsArray.get(indexFirstFlower)[2]);
+                              setFirstFlower(fstFl);
+                              newMove = new Move(firstFlower, null);
+                              handleLastMove(newMove);
+                              System.out.println("Flowers Clicked: " + indexFirstFlower );
                             }
-                            trianglesArray[indexTriangle].setTriangleClicked(true);
-
-                            colorTriangle[indexTriangle] = new Color(204,51,51);
-                            Graphics gr = getGraphics();
-                            gr.setColor(new Color(204,51,51));
-
-                            int[] tmpX = trianglesArray[polyArray.indexOf(poly)].getXpoints();
-                            int[] tmpY = trianglesArray[polyArray.indexOf(poly)].getYpoints();
-
-                            if (tmpY[0] == tmpY[1]) {
-                                tmpX[0] -= 1;
-                                tmpX[2] -= 1;
+                            else if (secondFlower == null) {
+                              Flower sndFl = new Flower(trianglesPositionsArray.get(indexSecondFlower)[0], trianglesPositionsArray.get(indexSecondFlower)[1], trianglesPositionsArray.get(indexSecondFlower)[2]);
+                              setSecondFlower(sndFl);
+                              newMove = new Move(firstFlower, secondFlower);
+                              firstFlower = null;
+                              secondFlower = null;
+                              handleLastMove(newMove);
+                              System.out.println("Flowers Clicked: " + indexFirstFlower + "   " + indexSecondFlower );
+                              //notify();
                             }
-                            else {
-                                tmpX[2] -= 2;
-                                tmpX[0] -= 8;
-                                tmpY[0] -= 9;
-                                tmpY[2] += 2;
-                                tmpY[1] += 1;
-                                }
-
-                            gr.fillPolygon(tmpX, tmpY, 3);
-                            break;
                         }
+                        //paintFlowerMove(indexSecondFlower);
+                        break;
                     }
+                }
 
                 int cnt = size + 1;
                 int cnt1 = size + 1;
@@ -443,7 +434,7 @@ public class GameboardGUI extends JPanel {
                    }
                 }
             }
-        });
+        }); // END mouseClicked
     } // END GAMEBOARD KONSTRUKTOR
 
     /**
@@ -506,8 +497,8 @@ public class GameboardGUI extends JPanel {
                 posArrayLine1[1] = new Position(col, row+1);
                 linesPositionsArray.add(posArrayLine1);
                 Position[] posArrayLine2 = new Position[2];
-                posArrayLine2[0] = new Position(col, row+1);
-                posArrayLine2[1] = new Position(col, row);
+                posArrayLine2[0] = new Position(col, row);
+                posArrayLine2[1] = new Position(col, row+1);
                 linesPositionsArray.add(posArrayLine2);
                 k++;
                 col++;

@@ -17,14 +17,14 @@ public class TestGameboardGUI /*implements Requestable*/{
         }
 
         //gggui.request();
-         GUI gggui = new GUI(size);
+        // GUI gggui = new GUI(size);
 
-        /*EventQueue.invokeLater(new Runnable() {
+        EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
                // GameboardGUI.display(size);
                GUI gggui = new GUI(size);
             }
-        });*/
+        });
     }
 }

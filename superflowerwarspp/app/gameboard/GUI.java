@@ -29,7 +29,7 @@ public class GUI implements Requestable, Output {
         //gameboard = new GameboardGUI(f,myViewer.getSize(), this);
         JPanel scores = new Scores();
         gameboard.add(scores);
-        gameboard.add(new Buttons());
+        gameboard.add(new Buttons(gameboard));
         gameboard.setBackground(new Color(255,140,0));
         scores.setBackground(new Color(255,140,0));
         f.add(gameboard);
