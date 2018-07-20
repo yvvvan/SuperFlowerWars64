@@ -1,7 +1,7 @@
-package flowerwarspp.player;
+package app.player;
 import flowerwarspp.preset.*;
 import java.rmi.*;
-import superflowerwars64.*;
+import app.superflowerwars64.*;
 import java.util.*;
 
 
@@ -14,7 +14,6 @@ public class AIspieler implements Player {
 // --Attribute------------------------------------------------------------------
     /*jeder Spieler hat einen eignen Brett*/
     private SWRBoard board;
-
     /*jeder Spieler hat eigne Farbe, Red or Blue*/
     private PlayerColor mycolor;
     //jede Spieler hat ein checknumber um Reihenfolge zu checken
@@ -36,10 +35,15 @@ public class AIspieler implements Player {
      * @return [Move]
      */
     public Move request() throws Exception, RemoteException{
+      // System.out.println("hererer");
       if(check==1){
-        MyViewer myviewer=new MyViewer(this.board,this.mycolor,this.board.getStatus());//bekomme ich ein Viewer von diese board
-        ArrayList<Move> possiblemove=new ArrayList<Move>(myviewer.getPossibleMoves());//mit Hilfe von diese Viewer kann ich die possiblemoves bekommen
+        //bekomme ich ein Viewer von diese board
+        MyViewer myviewer=new MyViewer(this.board,this.mycolor,this.board.getStatus());
+        //mit Hilfe von diese Viewer kann ich die possiblemoves bekommen
+        ArrayList<Move> possiblemove=new ArrayList<Move>(myviewer.getPossibleMovesFl());/*改正gPM返回所有可能Move，如果是Ditch等则getFF报错*/
+        // System.out.println(possiblemove);
         int listsize=possiblemove.size();// bekomme ich die size von possiblemoves
+        if(listsize>0){/*改正 最终情况为 无Flower，End，Surr，可能有Ditch，gPMFl只返回花，所以最终可能为空*/
         ArrayList<Integer> score=new ArrayList();// ein Hilfecollectoin umzu speichern score von jede possible moves
         for (int i=0;i<listsize;i++){
           Move move=possiblemove.get(i);
@@ -68,7 +72,12 @@ public class AIspieler implements Player {
         check=2;
         return myMove;
       }else{
-        throw new Exception("Es ist nicht in richtig Reinfolge!");
+        board.make(new Move(MoveType.End));
+        check=2;
+        return new Move(MoveType.End);
+      }
+      }else{
+        throw new Exception("Es ist nicht in richtig Reinfolge!5");
       }
     }
     /**
@@ -111,11 +120,11 @@ public class AIspieler implements Player {
     public void confirm(Status status) throws Exception, RemoteException{
       if(check==2){
         if(status != board.getStatus()){
-          throw new Exception("Eigener Board-Status ist nicht mit Spiel-Board-Status identisch!");
+          throw new Exception("Eigener Board-Status ist nicht mit Spiel-Board-Status identisch!4");
         }
         check=3;
       }else{
-        throw new Exception("Es ist nicht in richtig Reinfolge!");
+        throw new Exception("Es ist nicht in richtig Reinfolge!3");
       }
     }
     /*eingabe : opponent Move + status des letzen Zuges
@@ -126,18 +135,15 @@ public class AIspieler implements Player {
      * @param status       [Status des letzten Zuges]
      */
     public void update(Move opponentMove, Status status) throws Exception, RemoteException{
-      if(check==3){
-        if(status == Status.Ok){
+      if(check != 3) throw new Exception("Update: Es ist nicht in richtig Reinfolge! "); /*改正 二号蓝色玩家最先开始同步，此时刚init check为1*/
+        // System.out.println("eee");
+        if(status != Status.Illegal){ /*改正 Ok,Draw,Win都应该同步update*/
           board.make(opponentMove);
           Status mystatus=board.getStatus();
-          if(mystatus!=status){
-            throw new Exception("Es ist nicht in richtig Reihenfolge!");
-          }
-        }
-        check=1;
-      }else{
-        throw new Exception("Es ist nicht in richtig Reinfolge!");
-      }
+          if(mystatus!=status)
+            throw new Exception("Update: Status Fehler MainBoard & thisBoard ");
+          check=1;
+        }else throw new Exception("Update: Illegal Status MainBoard");
 
     }
     /**
@@ -152,7 +158,8 @@ public class AIspieler implements Player {
       if(check==0){
          board = new SWRBoard(boardSize);
          mycolor = color;
-         check=1;
+         check=(color==PlayerColor.Red)?1:3;/*改正 二号蓝色玩家最先开始同步，此时刚init check为1*/
+         // System.out.println(color+""+check);
       }else{
         throw new Exception("Es ist nicht in richtig Reinfolge!");
       }
