@@ -3,6 +3,6 @@ import flowerwarspp.preset.*;
 import app.superflowerwars64.*;
 
 public interface Output {
-	void setMyViewer(MyViewer myViewer);    
-	void display();
+	//void setMyViewer(MyViewer myViewer);
+	void display(Move lastMove);
 }
