@@ -17,15 +17,15 @@ public class GUI implements Requestable, Output {
 
     private GameboardGUI gameboard;
     private MyViewer myViewer;
-    //private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
 
-    public GUI(int size /*MyViewer myViewer*/) {
-        //this.myViewer = myViewer;
+    public GUI(MyViewer myViewer) {
+        this.myViewer = myViewer;
         JFrame f = new JFrame("SuperFlowerWars64");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(1280, 1080);
-        gameboard = new GameboardGUI(f, size, this);
+        gameboard = new GameboardGUI(f, myViewer.getSize(), this);
         //gameboard = new GameboardGUI(f,myViewer.getSize(), this);
         JPanel scores = new Scores();
         gameboard.add(scores);
