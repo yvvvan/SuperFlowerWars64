@@ -256,13 +256,9 @@ public class SWRBoard implements Board, Viewable {
       case Flower:
           if(flowerMove(move, playerflowers)) {
             nextPlayer();
-            // if(getPossibleMovesFl().size()!=0){
             status = Status.Ok;
-            // if(turns>size*size/2)
             checkthis();
           }
-          // else status =Status.Draw;
-          // }
           else {
             status = Status.Illegal;
           }
@@ -273,7 +269,6 @@ public class SWRBoard implements Board, Viewable {
         if(ditchMove(move, playerditches, playerflowers)) {
           nextPlayer();
           status = Status.Ok;
-          // if(turns>size*size/2)
           checkthis();
         }
         else {
@@ -313,10 +308,6 @@ public class SWRBoard implements Board, Viewable {
           else {
             status = Status.Illegal;
           }
-          // System.out.println(getPoints(PlayerColor.Red)+"y2f"+getPoints(PlayerColor.Blue));
-          // System.out.println(status);
-          // System.out.println(fieldset);
-          // System.out.println();
           break;
           //END CASE END----------------------------------------------------------
 
@@ -401,22 +392,16 @@ public class SWRBoard implements Board, Viewable {
     allflowerset.addAll(blueflowerset);
 
     HashSet<Field> gardenset = new HashSet<Field>();
-    // for(Flower flower : flowerset)
     for(Field field : fieldset)
-    // if(field.equals(flower))
       if(field.getColor()==current)
         if(field.getClusteramount() == 4)
           gardenset.add(field);
-          // System.out.println("gt"+gardenset);
 
         HashSet<Field> beet3set = new HashSet<Field>();
-        // for(Flower flower : flowerset)
         for(Field field : fieldset)
-        // if (field.equals(flower))
           if(field.getColor()==current)
             if(field.getClusteramount() == 3)
               beet3set.add(field);
-          // System.out.println("bts"+beet3set);
 
         HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
         for(Field flower : beet3set){
@@ -426,7 +411,6 @@ public class SWRBoard implements Board, Viewable {
         }
         beetNachbarnset.remove(null);
         beetNachbarnset.removeAll(beet3set);
-        // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
 
       //FLOWER----------------------------------------------------------------
 
@@ -488,22 +472,16 @@ public class SWRBoard implements Board, Viewable {
        allflowerset.addAll(blueflowerset);
 
        HashSet<Field> gardenset = new HashSet<Field>();
-       // for(Flower flower : flowerset)
          for(Field field : fieldset)
-           // if(field.equals(flower))
            if(field.getColor()==current)
              if(field.getClusteramount() == 4)
                gardenset.add(field);
-        // System.out.println("gt"+gardenset);
 
        HashSet<Field> beet3set = new HashSet<Field>();
-       // for(Flower flower : flowerset)
          for(Field field : fieldset)
-           // if (field.equals(flower))
            if(field.getColor()==current)
             if(field.getClusteramount() == 3)
                beet3set.add(field);
-      // System.out.println("bts"+beet3set);
 
        HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
        for(Field flower : beet3set){
@@ -513,8 +491,6 @@ public class SWRBoard implements Board, Viewable {
        }
        beetNachbarnset.remove(null);
        beetNachbarnset.removeAll(beet3set);
-       // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
-      //
 
   //FLOWER----------------------------------------------------------------
 
@@ -616,7 +592,7 @@ public class SWRBoard implements Board, Viewable {
       if(p.contains(d.getFirst())&&p.contains(d.getSecond())) return false;
     }
     return true;
-  }
+  }//isNEmpty
 //============================================================================
 /**
  * Hilfesmethode, wird gepruefte, ob f1 und f2 miteinandren beeinflussen koennen
@@ -680,7 +656,6 @@ public class SWRBoard implements Board, Viewable {
  */
   private boolean isAround(HashSet<Field> Beet){
     HashSet<Field> aroundYou = aroundBeet(Beet);
-    // System.out.println(aroundYou);
     for(Field f : aroundYou){
       if (f.getColor() == current) return true;
     }
@@ -700,7 +675,6 @@ public class SWRBoard implements Board, Viewable {
       for(int i = 0; i<3 ; i++){
         int a = p[i].getColumn();
         int b = p[i].getRow();
-        // System.out.println(a+" "+b);
         if(a-1>0){
           ckadField(beetAroundset , p[i], new Position(a-1,b),   new Position(a-1,b+1) );
           ckadField(beetAroundset , p[i], new Position(a,b+1),   new Position(a-1,b+1) );}
@@ -746,19 +720,14 @@ public class SWRBoard implements Board, Viewable {
             remove.add(flower);
           }
         }
-
         //beet -> nachbarn von f wird hier addiert
         beet.removeAll(remove);
-          // System.out.println("B"+beet);
-
-     //checked -> schon gepruefte(nachbar)/addierte Felder
+        //checked -> schon gepruefte(nachbar)/addierte Felder
         checked.add(f);
-          // System.out.println("C"+checked);
-    //help -> neu addierte Felder(nachbar); wird geprueft ob weitere nachbarn gibt
+        //help -> neu addierte Felder(nachbar); wird geprueft ob weitere nachbarn gibt
         HashSet<Field>help = new HashSet<Field>();
         help.addAll(beet);
         help.removeAll(checked);
-          // System.out.println("H"+help);
         if(help.size()!=0){
           for(Field flower : help){
             updateBs(flower);
@@ -851,22 +820,21 @@ public class SWRBoard implements Board, Viewable {
 
     playerflowerset.add(first); //Schritt Eins aus 'erkennen von gueltigen Zuegen'
     playerflowerset.add(second);
-      if(isFlowerMoveLegal(playerflowerset)) {
-        for(Field field : fieldset) {//Speichern der farbe in ein feld
-          if(field.equals(first) || field.equals(second)) {
-            field.setColor(current);
-          }
+    if(isFlowerMoveLegal(playerflowerset)) {
+      for(Field field : fieldset) {//Speichern der farbe in ein feld
+        if(field.equals(first) || field.equals(second)) {
+          field.setColor(current);
         }
-        return true;
       }
-      else {
-        playerflowerset.remove(first);
-        playerflowerset.remove(second);
-        if(isFlowerMoveLegal(playerflowerset));/*dieser aufruf von isFlowerMoveLegal ist nur hier, um die korrekten
-         clusteramounts in die felder zu speichern, da diese benoetigt werden*/
-        return false;
-      }
-    //return true;
+      return true;
+    }
+    else {
+      playerflowerset.remove(first);
+      playerflowerset.remove(second);
+      if(isFlowerMoveLegal(playerflowerset));/*dieser aufruf von isFlowerMoveLegal ist nur hier, um die korrekten
+      clusteramounts in die felder zu speichern, da diese benoetigt werden*/
+      return false;
+    }
   }//END FLOWERMOVE
   //============================================================================
   /**
