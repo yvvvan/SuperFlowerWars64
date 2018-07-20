@@ -1,4 +1,4 @@
-package app.superflowerwars64;
+package superflowerwars64;
 
 import flowerwarspp.preset.*;
 import java.util.*;
@@ -11,8 +11,6 @@ import java.util.*;
 * @author Maximilian Schlensog
 */
 public class SWRBoard implements Board, Viewable {
-
-  // java -cp build/classes:build/classes/FlowerWarsPP-Tester.jar BoardTester app.superflowerwars64.SWRBoard mini
 
   /**Die Groesse (in Dreieckskanten) des Spielbretts*/
   private int size;
@@ -101,8 +99,8 @@ public class SWRBoard implements Board, Viewable {
   /**
    * Hilfsmethode fuer die Initialisierung des Spielbretts mit Spielfeldern.
    * Diese Methode konstruiert Felder die aufrecht stehen.
-   * @param  i    Anfangsposition
-   * @param  j    Endposition
+   * @param  i    Zeile
+   * @param  j    Spalte
    * @param  coll Collection von Felder
    * @return      Felder
    */
@@ -125,8 +123,8 @@ public class SWRBoard implements Board, Viewable {
   /**
    * Hilfsmethode fuer die Initialisierung des Spielbretts mit Spielfeldern.
    * Diese Methode konstruiert Felder die umgekehrt stehen.
-   * @param  i    Anfangsposition
-   * @param  j    Endposition
+   * @param  i    Zeile
+   * @param  j    Spalte
    * @param  coll Collection von Felder
    * @return      Felder
    */
@@ -302,18 +300,7 @@ public class SWRBoard implements Board, Viewable {
               return;                             //type "end", einfach zu schauen...
             }                                     //ob noch ein leg. Blumenzug ...
           }                                       //moeglich ist.
-          /*System.out.println("Situation on the board: " + size);
-          for(Field f : fieldset) {
-            System.out.println(f);
-          }
-          for(Ditch d : redditchset) {
-            System.out.println("red" + d);
-          }
-          for(Ditch d : blueditchset) {
-            System.out.println("blue" + d);
-          }
-          System.out.println("Red: " + getPoints(PlayerColor.Red) + "Blue: " + getPoints(PlayerColor.Blue));
-          System.out.println("-------------------");*/
+
           if(getPoints(PlayerColor.Red) > getPoints(PlayerColor.Blue)) {
             status = Status.RedWin;
           }
@@ -376,21 +363,107 @@ public class SWRBoard implements Board, Viewable {
     //Falls es kein Zug(2Blumen) gibt, suchen wir gPM (gPM ist sehr offiziell, ganz und langsam)
     if(check.size()<2) {
     Collection<Move> gP = getPossibleMoves();
-    if(gP.contains(new Move(MoveType.End))&&gP.size()==2) {
-      if(getPoints(PlayerColor.Red) > getPoints(PlayerColor.Blue)) {
-        status = Status.RedWin;
-      }
-      else if(getPoints(PlayerColor.Red) < getPoints(PlayerColor.Blue)) {
-        status = Status.BlueWin;
-      }
-      else if(getPoints(PlayerColor.Red) == getPoints(PlayerColor.Blue)){
-        status = Status.Draw;
-      }
-      else {
-        status = Status.Illegal;
+      if(gP.contains(new Move(MoveType.End))&&gP.size()==2) {
+        if(getPoints(PlayerColor.Red) > getPoints(PlayerColor.Blue)) {
+          status = Status.RedWin;
+        }
+        else if(getPoints(PlayerColor.Red) < getPoints(PlayerColor.Blue)) {
+          status = Status.BlueWin;
+        }
+        else if(getPoints(PlayerColor.Red) == getPoints(PlayerColor.Blue)){
+          status = Status.Draw;
+        }
+        else {
+          status = Status.Illegal;
+        }
       }
     }
-    }
+  }
+  //============================================================================
+  /**
+  * Methode, die die Menge aller gueltigen Zuege zurueckliefert
+  * @author Yufan Dong
+  * @return Menge der moegliche Zuege
+  */
+  public Collection<Move> getPossibleMovesFl() {
+
+    HashSet<Move> possibleM = new HashSet<Move>();
+
+    HashSet<Ditch> ditchset = new HashSet<Ditch>();
+    ditchset.addAll(redditchset);
+    ditchset.addAll(blueditchset);
+
+    HashSet<Flower> flowerset = new HashSet<Flower>();
+    flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
+
+    HashSet<Flower> allflowerset = new HashSet<Flower>();
+    allflowerset.addAll(redflowerset);
+    allflowerset.addAll(blueflowerset);
+
+    HashSet<Field> gardenset = new HashSet<Field>();
+    // for(Flower flower : flowerset)
+    for(Field field : fieldset)
+    // if(field.equals(flower))
+      if(field.getColor()==current)
+        if(field.getClusteramount() == 4)
+          gardenset.add(field);
+          // System.out.println("gt"+gardenset);
+
+        HashSet<Field> beet3set = new HashSet<Field>();
+        // for(Flower flower : flowerset)
+        for(Field field : fieldset)
+        // if (field.equals(flower))
+          if(field.getColor()==current)
+            if(field.getClusteramount() == 3)
+              beet3set.add(field);
+          // System.out.println("bts"+beet3set);
+
+        HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
+        for(Field flower : beet3set){
+          beetNachbarnset.add(flower.getLeft());
+          beetNachbarnset.add(flower.getRight());
+          beetNachbarnset.add(flower.getVertical());
+        }
+        beetNachbarnset.remove(null);
+        beetNachbarnset.removeAll(beet3set);
+        // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
+
+      //FLOWER----------------------------------------------------------------
+
+        HashSet<Flower> possibleF = new HashSet<Flower>();
+        possibleF.addAll(fieldset);
+
+        //alle besizte Field (red+blue)
+        possibleF.removeAll(redflowerset);
+        possibleF.removeAll(blueflowerset);
+
+        //alle felder von garten
+        possibleF.removeAll(aroundBeet(gardenset));
+
+        //alle Nachbar von ditch (red+blue)
+        for(Ditch d : ditchset){
+          possibleF.removeAll(findFieldsOfDitch(d));
+        }
+
+        possibleF.remove(null);
+
+        HashSet<Move> myM = new HashSet<Move>();
+
+        for(Flower f1 : possibleF){
+          for(Flower f2 : possibleF){
+            if (!f1.equals(f2)){
+              Move n = new Move(f1,f2);
+              if(myM.add(n)){
+                if (!isBeetNachbar(f1,f2)){
+                  Move m = new Move(f1,f2);
+                  possibleM.add(m);
+                }
+              }
+            }
+          }
+        }
+        possibleM.remove(null);
+        return possibleM;
   }
   //============================================================================
   /**
@@ -398,241 +471,152 @@ public class SWRBoard implements Board, Viewable {
    * @author Yufan Dong
    * @return Menge der moegliche Zuege
    */
-     public Collection<Move> getPossibleMovesFl() {
+  public Collection<Move> getPossibleMoves() {
 
-           HashSet<Move> possibleM = new HashSet<Move>();
+       HashSet<Move> possibleM = new HashSet<Move>();
 
-           HashSet<Ditch> ditchset = new HashSet<Ditch>();
-            ditchset.addAll(redditchset);
-            ditchset.addAll(blueditchset);
-
-
-           HashSet<Flower> flowerset = new HashSet<Flower>();
-           flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
-
-           HashSet<Flower> allflowerset = new HashSet<Flower>();
-           allflowerset.addAll(redflowerset);
-           allflowerset.addAll(blueflowerset);
-
-           HashSet<Field> gardenset = new HashSet<Field>();
-           // for(Flower flower : flowerset)
-             for(Field field : fieldset)
-               // if(field.equals(flower))
-               if(field.getColor()==current)
-                 if(field.getClusteramount() == 4)
-                   gardenset.add(field);
-            // System.out.println("gt"+gardenset);
-
-           HashSet<Field> beet3set = new HashSet<Field>();
-           // for(Flower flower : flowerset)
-             for(Field field : fieldset)
-               // if (field.equals(flower))
-               if(field.getColor()==current)
-                if(field.getClusteramount() == 3)
-                   beet3set.add(field);
-          // System.out.println("bts"+beet3set);
-
-           HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
-           for(Field flower : beet3set){
-               beetNachbarnset.add(flower.getLeft());
-               beetNachbarnset.add(flower.getRight());
-               beetNachbarnset.add(flower.getVertical());
-           }
-           beetNachbarnset.remove(null);
-           beetNachbarnset.removeAll(beet3set);
-           // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
-          //
-
-      //FLOWER----------------------------------------------------------------
-
-           HashSet<Flower> possibleF = new HashSet<Flower>();
-           possibleF.addAll(fieldset);
+       HashSet<Ditch> ditchset = new HashSet<Ditch>();
+        ditchset.addAll(redditchset);
+        ditchset.addAll(blueditchset);
 
 
-           //alle besizte Field (red+blue)
-           possibleF.removeAll(redflowerset);
-           possibleF.removeAll(blueflowerset);
+       HashSet<Flower> flowerset = new HashSet<Flower>();
+       flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
 
-           //alle felder von garten
-           possibleF.removeAll(aroundBeet(gardenset));
+       HashSet<Flower> allflowerset = new HashSet<Flower>();
+       allflowerset.addAll(redflowerset);
+       allflowerset.addAll(blueflowerset);
 
-           //alle Nachbar von ditch (red+blue)
-           for(Ditch d : ditchset){
-             possibleF.removeAll(findFieldsOfDitch(d));
-           }
+       HashSet<Field> gardenset = new HashSet<Field>();
+       // for(Flower flower : flowerset)
+         for(Field field : fieldset)
+           // if(field.equals(flower))
+           if(field.getColor()==current)
+             if(field.getClusteramount() == 4)
+               gardenset.add(field);
+        // System.out.println("gt"+gardenset);
 
-           possibleF.remove(null);
+       HashSet<Field> beet3set = new HashSet<Field>();
+       // for(Flower flower : flowerset)
+         for(Field field : fieldset)
+           // if (field.equals(flower))
+           if(field.getColor()==current)
+            if(field.getClusteramount() == 3)
+               beet3set.add(field);
+      // System.out.println("bts"+beet3set);
 
-           HashSet<Move> myM = new HashSet<Move>();
+       HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
+       for(Field flower : beet3set){
+           beetNachbarnset.add(flower.getLeft());
+           beetNachbarnset.add(flower.getRight());
+           beetNachbarnset.add(flower.getVertical());
+       }
+       beetNachbarnset.remove(null);
+       beetNachbarnset.removeAll(beet3set);
+       // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
+      //
 
-           for(Flower f1 : possibleF){
-             for(Flower f2 : possibleF){
-               if (!f1.equals(f2)){
-                 Move n = new Move(f1,f2);
-                 if(myM.add(n)){
-                   if (!isBeetNachbar(f1,f2)){
-                     Move m = new Move(f1,f2);
-                     possibleM.add(m);
-                   }
-                 }
+  //FLOWER----------------------------------------------------------------
+
+       HashSet<Flower> possibleF = new HashSet<Flower>();
+       possibleF.addAll(fieldset);
+
+
+       //alle besizte Field (red+blue)
+       possibleF.removeAll(redflowerset);
+       possibleF.removeAll(blueflowerset);
+
+       //alle felder von garten
+       possibleF.removeAll(aroundBeet(gardenset));
+
+       //alle Nachbar von ditch (red+blue)
+       for(Ditch d : ditchset){
+         possibleF.removeAll(findFieldsOfDitch(d));
+       }
+
+       possibleF.remove(null);
+
+       HashSet<Move> myM = new HashSet<Move>();
+
+       for(Flower f1 : possibleF){
+         for(Flower f2 : possibleF){
+           if (!f1.equals(f2)){
+             Move n = new Move(f1,f2);
+             if(myM.add(n)){
+               if (!isBeetNachbar(f1,f2)){
+                 Move m = new Move(f1,f2);
+                 possibleM.add(m);
                }
              }
            }
-           possibleM.remove(null);
-           return possibleM;
          }
-  //============================================================================
-  /**
-   * Methode, die die Menge aller gueltigen Zuege zurueckliefert
-   * @author Yufan Dong
-   * @return Menge der moegliche Zuege
-   */
-     public Collection<Move> getPossibleMoves() {
+       }
+  //End --------------------------------------------------------------------
+      possibleM.remove(null);
+      if(possibleM.size()==0) possibleM.add(new Move(MoveType.End));
 
-           HashSet<Move> possibleM = new HashSet<Move>();
+  //DITCH -------------------------------------------------------------------
+       HashSet<Ditch> possibleD = new HashSet<Ditch>();
 
-           HashSet<Ditch> ditchset = new HashSet<Ditch>();
-            ditchset.addAll(redditchset);
-            ditchset.addAll(blueditchset);
+       // Punkte von Ditch muessen von einger Blumen
+       HashSet<Position> points = new HashSet<Position>();
+       for(Flower flower : flowerset){
+         points.add(flower.getFirst());
+         points.add(flower.getSecond());
+         points.add(flower.getThird());
+       }
 
+       //schon besitzt
+       HashSet<Position> unPossibleP = new HashSet<Position>();
+       for(Ditch d : ditchset){
+         unPossibleP.add(d.getFirst());
+         unPossibleP.add(d.getSecond());
+       }
 
-           HashSet<Flower> flowerset = new HashSet<Flower>();
-           flowerset = (current == PlayerColor.Red)?redflowerset:blueflowerset;
+       points.removeAll(unPossibleP);
 
-           HashSet<Flower> allflowerset = new HashSet<Flower>();
-           allflowerset.addAll(redflowerset);
-           allflowerset.addAll(blueflowerset);
+       for(Position p1 : points)
+         for(Position p2 : points)
+          if(!p1.equals(p2)){
+            int a = p1.getColumn();
+            int b = p1.getRow();
+            int c = p2.getColumn();
+            int d = p2.getRow();
 
-           HashSet<Field> gardenset = new HashSet<Field>();
-           // for(Flower flower : flowerset)
-             for(Field field : fieldset)
-               // if(field.equals(flower))
-               if(field.getColor()==current)
-                 if(field.getClusteramount() == 4)
-                   gardenset.add(field);
-            // System.out.println("gt"+gardenset);
-
-           HashSet<Field> beet3set = new HashSet<Field>();
-           // for(Flower flower : flowerset)
-             for(Field field : fieldset)
-               // if (field.equals(flower))
-               if(field.getColor()==current)
-                if(field.getClusteramount() == 3)
-                   beet3set.add(field);
-          // System.out.println("bts"+beet3set);
-
-           HashSet<Field> beetNachbarnset = new HashSet<Field>(); //link recht oben|unter
-           for(Field flower : beet3set){
-               beetNachbarnset.add(flower.getLeft());
-               beetNachbarnset.add(flower.getRight());
-               beetNachbarnset.add(flower.getVertical());
-           }
-           beetNachbarnset.remove(null);
-           beetNachbarnset.removeAll(beet3set);
-           // System.out.println(aroundBeet(beet3set).containsAll(beetNachbarnset));
-          //
-
-      //FLOWER----------------------------------------------------------------
-
-           HashSet<Flower> possibleF = new HashSet<Flower>();
-           possibleF.addAll(fieldset);
-
-
-           //alle besizte Field (red+blue)
-           possibleF.removeAll(redflowerset);
-           possibleF.removeAll(blueflowerset);
-
-           //alle felder von garten
-           possibleF.removeAll(aroundBeet(gardenset));
-
-           //alle Nachbar von ditch (red+blue)
-           for(Ditch d : ditchset){
-             possibleF.removeAll(findFieldsOfDitch(d));
-           }
-
-           possibleF.remove(null);
-
-           HashSet<Move> myM = new HashSet<Move>();
-
-           for(Flower f1 : possibleF){
-             for(Flower f2 : possibleF){
-               if (!f1.equals(f2)){
-                 Move n = new Move(f1,f2);
-                 if(myM.add(n)){
-                   if (!isBeetNachbar(f1,f2)){
-                     Move m = new Move(f1,f2);
-                     possibleM.add(m);
-                   }
-                 }
-               }
-             }
-           }
-      //End --------------------------------------------------------------------
-          possibleM.remove(null);
-          if(possibleM.size()==0) possibleM.add(new Move(MoveType.End));
-
-      //DITCH -------------------------------------------------------------------
-           HashSet<Ditch> possibleD = new HashSet<Ditch>();
-
-           // Punkte von Ditch muessen von einger Blumen
-           HashSet<Position> points = new HashSet<Position>();
-           for(Flower flower : flowerset){
-             points.add(flower.getFirst());
-             points.add(flower.getSecond());
-             points.add(flower.getThird());
-           }
-
-           //schon besitzt
-           HashSet<Position> unPossibleP = new HashSet<Position>();
-           for(Ditch d : ditchset){
-             unPossibleP.add(d.getFirst());
-             unPossibleP.add(d.getSecond());
-           }
-
-           points.removeAll(unPossibleP);
-
-           for(Position p1 : points)
-             for(Position p2 : points)
-               if(!p1.equals(p2)){
-                 int a = p1.getColumn();
-                 int b = p1.getRow();
-                 int c = p2.getColumn();
-                 int d = p2.getRow();
-
-                 int diff1 = Math.abs(a - c);
-                 int diff2 = Math.abs(b - d);
-           // length = 1
-                if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||((a-c==d-b)&&diff1==1)){
-                  Ditch one = new Ditch(p1,p2);
-          // Punkte von Ditch koennen nicht von einer Blume
-                  if (isNEmpty(one)) possibleD.add(one);
-                }
-               }
-
-            for(Ditch d : possibleD){
-               Move m = new Move(d);
-               possibleM.add(m);
+            int diff1 = Math.abs(a - c);
+            int diff2 = Math.abs(b - d);
+       // length = 1
+            if((diff1 == 0 && diff2 == 1)||(diff1 == 1 && diff2 == 0)||((a-c==d-b)&&diff1==1)){
+              Ditch one = new Ditch(p1,p2);
+      // Punkte von Ditch koennen nicht von einer Blume
+              if (isNEmpty(one)) possibleD.add(one);
             }
+          }
 
-        //Surrender ------------------------------------------------------------
-           possibleM.add(new Move(MoveType.Surrender));
+    for(Ditch d : possibleD){
+        Move m = new Move(d);
+        possibleM.add(m);
+    }
 
-           possibleM.remove(null);
+    //Surrender ------------------------------------------------------------
+    possibleM.add(new Move(MoveType.Surrender));
 
-           return possibleM;
- }//END GETPOSSIBLEMOVES
- //============================================================================
- private boolean isNEmpty(Ditch d){
-   HashSet<Flower> allflowerset = new HashSet<Flower>();
-   allflowerset.addAll(redflowerset);
-   allflowerset.addAll(blueflowerset);
-   for(Flower flower : allflowerset){
-     HashSet<Position> p =new HashSet<Position>();
-     p.add(flower.getFirst());p.add(flower.getSecond());p.add(flower.getThird());
-     if(p.contains(d.getFirst())&&p.contains(d.getSecond())) return false;
-   }
-   return true;
-}
+    possibleM.remove(null);
+
+    return possibleM;
+  }//END GETPOSSIBLEMOVES
+//============================================================================
+  private boolean isNEmpty(Ditch d){
+    HashSet<Flower> allflowerset = new HashSet<Flower>();
+    allflowerset.addAll(redflowerset);
+    allflowerset.addAll(blueflowerset);
+    for(Flower flower : allflowerset){
+      HashSet<Position> p =new HashSet<Position>();
+      p.add(flower.getFirst());p.add(flower.getSecond());p.add(flower.getThird());
+      if(p.contains(d.getFirst())&&p.contains(d.getSecond())) return false;
+    }
+    return true;
+  }
 //============================================================================
 /**
  * Hilfesmethode, wird gepruefte, ob f1 und f2 miteinandren beeinflussen koennen
@@ -641,52 +625,52 @@ public class SWRBoard implements Board, Viewable {
  * @param  f2              Blume2
  * @return                 ob f1 <-> f2 beeinflussen koennen
  */
-private boolean isBeetNachbar( Flower f1, Flower f2){
+  private boolean isBeetNachbar( Flower f1, Flower f2){
 
-  int ck = 0;
-  for(Field f : fieldset){
-    if(f.equals(f1)){
-      ck++;
-      f.setColor(current);
-      beet.clear();
-      checked.clear();
-      updateBs(f);
-      //falls f1 gemacht wird, beet ist das Beet von f1
-      //falls Beet mehr als 4 Blumen hat, oder um Beet schon besitzt ist
-      if(beet.size()>4 || (beet.size()==4&&isAround(beet))){
-        f.setColor(null);
-        return true;
-     //else wird problemlos hinzufugt und pruefen ob f2 auch problemlos ist.
+    int ck = 0;
+    for(Field f : fieldset){
+      if(f.equals(f1)){
+        ck++;
+        f.setColor(current);
+        beet.clear();
+        checked.clear();
+        updateBs(f);
+        //falls f1 gemacht wird, beet ist das Beet von f1
+        //falls Beet mehr als 4 Blumen hat, oder um Beet schon besitzt ist
+        if(beet.size()>4 || (beet.size()==4&&isAround(beet))){
+          f.setColor(null);
+          return true;
+       //else wird problemlos hinzufugt und pruefen ob f2 auch problemlos ist.
+        }
       }
     }
-  }
-  if(ck!=1) System.out.println("FFFFFFFFFFFFFFFFFF1"); //check ob in einer Reihefolge ist
- for(Field f : fieldset){
-    if(f.equals(f2)){
-      ck++;
-      f.setColor(current);
-      beet.clear();
-      checked.clear();
-      updateBs(f);
-      if(beet.size()>4 || (beet.size()==4&&isAround(beet))){
-        f.setColor(null);
-        for(Field ff : fieldset)
-         if(ff.equals(f1))
-           ff.setColor(null);
-        return true;
+    if(ck!=1) System.out.println("FFFFFFFFFFFFFFFFFF1"); //check ob in einer Reihefolge ist
+   for(Field f : fieldset){
+      if(f.equals(f2)){
+        ck++;
+        f.setColor(current);
+        beet.clear();
+        checked.clear();
+        updateBs(f);
+        if(beet.size()>4 || (beet.size()==4&&isAround(beet))){
+          f.setColor(null);
+          for(Field ff : fieldset)
+           if(ff.equals(f1))
+             ff.setColor(null);
+          return true;
+        }
       }
     }
-  }
-  if(ck!=2) System.out.println("FFFFFFFFFFFFFFFFFF2");
-  for(Field f : fieldset){
-   if(f.equals(f1)||f.equals(f2)){
-     f.setColor(null);
-     ck--;
+    if(ck!=2) System.out.println("FFFFFFFFFFFFFFFFFF2");
+    for(Field f : fieldset){
+     if(f.equals(f1)||f.equals(f2)){
+       f.setColor(null);
+       ck--;
+     }
    }
- }
- if(ck!=0) System.out.println("FFFFFFFFFFFFFFFFFF0");
-  return false;
-}//END ISBEETNACHBAR
+   if(ck!=0) System.out.println("FFFFFFFFFFFFFFFFFF0");
+    return false;
+  }//END ISBEETNACHBAR
 //============================================================================
 /**
  * Hilfesmethode, wird geprueft, ob es um ein Beet besitzt ist
@@ -694,14 +678,14 @@ private boolean isBeetNachbar( Flower f1, Flower f2){
  * @param  Beet das gesuchte Beet
  * @return      ob das besitzt ist
  */
-private boolean isAround(HashSet<Field> Beet){
-  HashSet<Field> aroundYou = aroundBeet(Beet);
-  // System.out.println(aroundYou);
-  for(Field f : aroundYou){
-    if (f.getColor() == current) return true;
-  }
-  return false;
-}//END ISAROUND
+  private boolean isAround(HashSet<Field> Beet){
+    HashSet<Field> aroundYou = aroundBeet(Beet);
+    // System.out.println(aroundYou);
+    for(Field f : aroundYou){
+      if (f.getColor() == current) return true;
+    }
+    return false;
+  }//END ISAROUND
 //============================================================================
 /**
  * Hilfesmethode, wird gesuchte, alle Felder, die um ein Beet stehen
@@ -709,29 +693,29 @@ private boolean isAround(HashSet<Field> Beet){
  * @param  Beet das gesuchte Beet
  * @return      eine Menge von Felder, die um das Beet stehen
  */
-private HashSet<Field> aroundBeet(HashSet<Field> Beet){
-   HashSet<Field> beetAroundset = new HashSet<Field>();
-   for(Field flower : Beet){
-     Position[] p =new Position[]{flower.getFirst(),flower.getSecond(),flower.getThird()};
-     for(int i = 0; i<3 ; i++){
-       int a = p[i].getColumn();
-       int b = p[i].getRow();
-       // System.out.println(a+" "+b);
-       if(a-1>0){
-         ckadField(beetAroundset , p[i], new Position(a-1,b),   new Position(a-1,b+1) );
-         ckadField(beetAroundset , p[i], new Position(a,b+1),   new Position(a-1,b+1) );}
-         ckadField(beetAroundset , p[i], new Position(a,b+1),   new Position(a+1,b) );
-       if(b-1>0){
-         ckadField(beetAroundset , p[i], new Position(a+1,b-1), new Position(a+1,b) );
-         ckadField(beetAroundset , p[i], new Position(a+1,b-1), new Position(a,b-1) );
+  private HashSet<Field> aroundBeet(HashSet<Field> Beet){
+    HashSet<Field> beetAroundset = new HashSet<Field>();
+    for(Field flower : Beet){
+      Position[] p =new Position[]{flower.getFirst(),flower.getSecond(),flower.getThird()};
+      for(int i = 0; i<3 ; i++){
+        int a = p[i].getColumn();
+        int b = p[i].getRow();
+        // System.out.println(a+" "+b);
+        if(a-1>0){
+          ckadField(beetAroundset , p[i], new Position(a-1,b),   new Position(a-1,b+1) );
+          ckadField(beetAroundset , p[i], new Position(a,b+1),   new Position(a-1,b+1) );}
+          ckadField(beetAroundset , p[i], new Position(a,b+1),   new Position(a+1,b) );
+        if(b-1>0){
+          ckadField(beetAroundset , p[i], new Position(a+1,b-1), new Position(a+1,b) );
+          ckadField(beetAroundset , p[i], new Position(a+1,b-1), new Position(a,b-1) );
         if(a-1>0)
-         ckadField(beetAroundset , p[i], new Position(a-1,b),   new Position(a,b-1) );
-       }
-     }
-   }
-   beetAroundset.removeAll(Beet);
-   return beetAroundset;
-}//END AROUNDBEET
+          ckadField(beetAroundset , p[i], new Position(a-1,b),   new Position(a,b-1) );
+        }
+      }
+    }
+    beetAroundset.removeAll(Beet);
+    return beetAroundset;
+  }//END AROUNDBEET
 //============================================================================
  /**HilfsVariable , das Beet von einem Feld*/
  HashSet<Field> beet = new HashSet<Field>(size*size);
@@ -744,47 +728,45 @@ private HashSet<Field> aroundBeet(HashSet<Field> Beet){
  * @author Yufan Dong
  * @param f Field f wird updated
  */
-private void updateBs(Field f){
- // falls beet mehr als 4 Blumen hat, einfach Illegal(in andere Methode)
- // nicht mehr weiter rechnen
- if(beet.size()< 5){ //dirket false
- if(f.getColor() != null) {
-     beet.add(f);
-     beet.add(f.getLeft());
-     beet.add(f.getRight());
-     beet.add(f.getVertical());
-     beet.remove(null);
+  private void updateBs(Field f){
+    // falls beet mehr als 4 Blumen hat, einfach Illegal(in andere Methode)
+    // nicht mehr weiter rechnen
+    if(beet.size()< 5){ //dirket false
+      if(f.getColor() != null) {
+        beet.add(f);
+        beet.add(f.getLeft());
+        beet.add(f.getRight());
+        beet.add(f.getVertical());
+        beet.remove(null);
+    //remove -> nicht gleiche Farbe
+        HashSet<Field> remove = new HashSet<Field>();
+        remove.clear();
+        for(Field flower : beet){
+          if (flower.getColor()!=f.getColor()){
+            remove.add(flower);
+          }
+        }
 
- //remove -> nicht gleiche Farbe
-     HashSet<Field> remove = new HashSet<Field>();
-     remove.clear();
-     for(Field flower : beet){
-       if (flower.getColor()!=f.getColor()){
-         remove.add(flower);
-       }
-     }
+        //beet -> nachbarn von f wird hier addiert
+        beet.removeAll(remove);
+          // System.out.println("B"+beet);
 
- //beet -> nachbarn von f wird hier addiert
-     beet.removeAll(remove);
-       // System.out.println("B"+beet);
-
- //checked -> schon gepruefte(nachbar)/addierte Felder
-     checked.add(f);
-       // System.out.println("C"+checked);
-
- //help -> neu addierte Felder(nachbar); wird geprueft ob weitere nachbarn gibt
-     HashSet<Field>help = new HashSet<Field>();
-     help.addAll(beet);
-     help.removeAll(checked);
-       // System.out.println("H"+help);
-     if(help.size()!=0){
-       for(Field flower : help){
-         updateBs(flower);
-       }
-     }
- }
- }
-}// END UPDATEBS
+     //checked -> schon gepruefte(nachbar)/addierte Felder
+        checked.add(f);
+          // System.out.println("C"+checked);
+    //help -> neu addierte Felder(nachbar); wird geprueft ob weitere nachbarn gibt
+        HashSet<Field>help = new HashSet<Field>();
+        help.addAll(beet);
+        help.removeAll(checked);
+          // System.out.println("H"+help);
+        if(help.size()!=0){
+          for(Field flower : help){
+            updateBs(flower);
+          }
+        }
+      }
+    }
+  }// END UPDATEBS
 //======================================================================
 /**
  * Feld mit Position(p1,p2,p3) wird geprueft und addiert(falls gueltig)
@@ -794,30 +776,30 @@ private void updateBs(Field f){
  * @param p2   Position2
  * @param p3   Position3
  */
-private void ckadField(Collection<Field> list ,Position p1,Position p2,Position p3){
-  if((p1!=p2)&&(p2!=p3)&&(p3!=p1)){
+  private void ckadField(Collection<Field> list ,Position p1,Position p2,Position p3){
+    if((p1!=p2)&&(p2!=p3)&&(p3!=p1)){
       Position[] p = new Position[]{p1,p2,p3};
       boolean onBoard = true;
       for(int i = 0; i<3; i++){
-          int a = p[i].getColumn();
-          int b = p[i].getRow();
-          if(a<0 || b<0 ||(a+b)>size+2){
-              onBoard = false;
-          }
+        int a = p[i].getColumn();
+        int b = p[i].getRow();
+        if(a<0 || b<0 ||(a+b)>size+2){
+          onBoard = false;
+        }
       }
       if(onBoard){
-          Flower fl = new Flower(p1,p2,p3);
-          for(Field f:fieldset)
-           if(f.equals(fl))
-             list.add(f);
+        Flower fl = new Flower(p1,p2,p3);
+        for(Field f:fieldset)
+          if(f.equals(fl))
+            list.add(f);
       }
-  }
-}//END CKADFIELD
+    }
+  }//END CKADFIELD
 //============================================================================
   /**
    * Methode, die die Menge aller Blumen eines Spielers als Hashset zurueckgibt
    * @param  color Spieler(Farbe)
-   * @return       seine Blumen
+   * @return       Menge aller Blumen eines Spielers
    */
   public Collection<Flower> getFlowers(final PlayerColor color) {
     if(color == PlayerColor.Red) {
@@ -831,7 +813,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
   /**
    * Methode, die die Menge aller Graeben eines Spielers als Hashset zurueckgibt
    * @param  color Spieler(Farbe)
-   * @return       seine Graeben
+   * @return       Menge aller Graeben eines Spielers
    */
   public Collection<Ditch> getDitches(final PlayerColor color) {
     if(color == PlayerColor.Red) {
@@ -846,9 +828,9 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
    * Hilfsmethode fuer make, die Zuege abhandelt, die Blumen setzen
    * @param  move            ein Zug(f1,f2)
    * @param  playerflowerset das Set von Blumen
-   * @return                 ob Zug gueltig ist
+   * @return                 Ob ein Zug gueltig ist.
    */
-  private boolean flowerMove (Move move, HashSet<Flower> playerflowerset) {//UNCHECKED
+  private boolean flowerMove (Move move, HashSet<Flower> playerflowerset) {
 
     Flower first = move.getFirstFlower();
     Flower second = move.getSecondFlower();
@@ -859,11 +841,9 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
     if(blueflowerset.contains(first) || blueflowerset.contains(second)) {
       return false;
     }
-
     if(first.equals(second)) {
       return false;
     }
-
     //vv Hier wird die Korrektheit der uebergebenen Blumen ueberprueft vv
     if(!checkFlowerPositions(first) || !checkFlowerPositions(second)) {
       return false;
@@ -882,8 +862,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
       else {
         playerflowerset.remove(first);
         playerflowerset.remove(second);
-        if(isFlowerMoveLegal(playerflowerset)) {
-        }/*dieser aufruf von isFlowerMoveLegal ist nur hier, um die korrekten
+        if(isFlowerMoveLegal(playerflowerset));/*dieser aufruf von isFlowerMoveLegal ist nur hier, um die korrekten
          clusteramounts in die felder zu speichern, da diese benoetigt werden*/
         return false;
       }
@@ -891,9 +870,9 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
   }//END FLOWERMOVE
   //============================================================================
   /**
-   * Hilfsmethode fuer flowerMove, die die korrekte Position ueberprueft
+   * Hilfsmethode fuer flowerMove, die die korrekte Position ueberprueft.
    * @param  flower gepruefte Blume
-   * @return        ob die die korrekte Position hat
+   * @return        Ob die Blume die korrekte Position hat.
    */
   private boolean checkFlowerPositions (Flower flower) {
 
@@ -953,7 +932,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
    * Hilfsmethode fuer flowerMove. Ueberprueft teilw. ueber andere Methoden
    * die Gueltigkeit eines Zuges, der Blumen beinhaltet.
    * @param  playerflowerset das Set von Blumen
-   * @return                 ob das Set gueltig ist
+   * @return                 Ob das Set gueltig ist
    */
   private boolean isFlowerMoveLegal(HashSet<Flower> playerflowerset) {
 
@@ -1010,19 +989,19 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
     }                             //nach der Gartenabstandsregel als ungueltig markieren
     for(Field f : fieldset) {
       for(Flower flower: playerflowerset) {
-        if(f.equals(flower) && (f.getMark() == -1)) { //hier wird das ganz ueberprueft:...
+        if(f.equals(flower) && (f.getMark() == -1)) { //hier wird das Ganze ueberprueft:...
           cleanUpMarks();                             //wenn ein feld gefunden wird, was eine blume auf...
           return false;                               //sich hat UND die gartenabstandregel-verletzung...
         }                                             //als markierung hat, wird false zurueckgegeben
       }
     }
-
     cleanUpMarks();
     return true; //schritt 11
   }//ENDE ISFLOWERMOVELEGAL
   //============================================================================
   /**Methode die von isFlowerMoveLegal aufgerufen wird, um die Markierungen die
-   * es setzt, wieder zu entfernen
+   * es setzt, wieder zu entfernen, da diese immer nur für einen bestimmten Zug
+   * korrekt sind.
    */
   private void cleanUpMarks () {
 
@@ -1075,7 +1054,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
 
     int mark = field.getMark();
 
-    //vv wenn ein rechtes feld existiert und nicht dieselbe farbe hat wie es selbst vv
+    //vv wenn ein rechtes feld existiert und nicht dieselbe farbe hat wie es selbst... vv
     if(field.getRight() != null) {
       if(field.getRight().getMark() != mark) {
         /*^^ in separaten klauseln, damit wenns in einer ist,
@@ -1085,7 +1064,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
       if(field.getRight().getVertical() != null) {
         if(field.getRight().getVertical().getMark() != mark) {
           field.getRight().getVertical().setMark(-1);
-        }//dann bekommt es die extra markierung -1, die aussagt, dass es nicht...
+        }//...dann bekommt es die extra markierung -1, die aussagt, dass es nicht...
       }//...bebaut werden darf, da hier ein Garten ist
         //vv hier nochmal fuer rechten und oberen Nachbarn vv
       if(field.getRight().getRight() != null) {
@@ -1101,8 +1080,6 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
     }
     if(field.getLeft() != null) {
       if(field.getLeft().getMark() != mark) {
-        /*^^ in separaten klauseln, damit wenns in einer ist,
-        nicht rumgeheult wird, wenn right = null ist*/
         field.getLeft().setMark(-1);
       }
       if(field.getLeft().getLeft() != null) {
@@ -1123,8 +1100,6 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
     }
     if(field.getVertical() != null) {
       if(field.getVertical().getMark() != mark) {
-        /*^^ in separaten klauseln, damit wenns in einer ist,
-        nicht rumgeheult wird, wenn right = null ist*/
         field.getVertical().setMark(-1);
       }
       if(field.getVertical().getRight() != null) {
@@ -1194,7 +1169,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
    * mit dem Graben gemeinsam hat, und somit mit ihm verbunden ist.
    * @param  ditch  Ditch
    * @param  flower Flower
-   * @return        ob die verbunden sind
+   * @return        Ob Graben und Blume zusammenliegen.
    */
   public boolean isDitchConnectedToFlower (Ditch ditch, Flower flower) {
 
@@ -1263,11 +1238,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
     HashSet<Field> markierte = new HashSet<Field>();
     HashSet<Field> foundfields = findFieldsOfDitch(ditch);
 
-    Field ft = new Field(new Position(4, 3), new Position(5, 3), new Position(4, 4));
-
-
     for(Field f : foundfields) {
-
       if(f.getColor() == null) {
         markierte.add(f);
       }
@@ -1286,7 +1257,7 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
    * Hilfsmethode fuer isNeighborEmpty. Gibt die an einen Graben angrenzenden
    * Felder zurueck.
    * @param  ditch Ditch
-   * @return       die an einen Graben angrenzenden Felder
+   * @return       Die an einen Graben angrenzenden Felder
    */
   private HashSet<Field> findFieldsOfDitch (Ditch ditch) {
 
@@ -1322,8 +1293,8 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
       playerditchset = blueditchset;
     }
     int points = 0;
-    int mark = 1; //1 = grau, andere ints siehe Field-Klasse unter clustermark
-    //-vv Alle flowers kriegen eine graue Faerbung vv----------------------------
+    int mark = 1;
+    //vv Alle flowers kriegen eine graue Faerbung vv
     for(Flower flower : playerflowerset) {
       for(Field field : fieldset) {
         if(field.equals(flower)) {
@@ -1334,53 +1305,56 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
         }
       }
     }
-    //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv vv
     for(Field f : fieldset) {
       if(f.getMark() == 1) {
         additionalColoring(f, ++mark);
       }
-    }
-    //bisher alle flowercluster in versch. farben makiert
+    }//bisher alle flowercluster in versch. farben makiert
+
     for(Field f : gardenset) {
-      points += p(countingN(f, playerditchset));
+      points += p(countingN(f, playerditchset, color));
     }
     cleanUpMarks();
     return points;
   }//END GETPOINTS
   //============================================================================
   /**
-   * Hilfsmethode fuer getPoints.
-   * @param  field          [description]
-   * @param  playerditchset [description]
-   * @return                [description]
+   * Hilfsmethode fuer getPoints. Berechnet das n für die p-Funktion.
+   * Alle zusammenhängenden Gaerten einer Farbe werden abgeklappert bis es keine
+   * mehr gibt, dann wird n zurueckgegeben.
+   * @param  field          Das Feld auf das countingN aufgerufen wird.
+   * @param  playerditchset Set von Graeben des Spielers.
+   * @param  color          Farbe, dessen n berechnet werden soll.
+   * @return                n
    */
-  private int countingN (Field field, HashSet<Ditch> playerditchset) {
+  private int countingN (Field field, HashSet<Ditch> playerditchset, PlayerColor color) {
     //NUR MIT GARDENSET SACHEN AUFRUFEN!
     int anzahl = 0;
 
     if(field.getClusteramount() == 0) {
       return anzahl;
-    }
+    }/*in der mit X gekennzeichneten Foreach-Schleife werden alle felder aufgerufen, die mit einem Ditch
+    verbunden sind. D.h. auch leere Felder. Damit keine Schleifen und/ oder dopplungen
+    entstehen, wird hier dann erstmal grundsätzlich 0 zurückgegeben.
+    Es darf aber nicht ... != 4 sein, da sonst beete sofort returnen und nicht
+    weiter Gräben folgen usw.*/
 
     if(!field.getCheck()) {//damit keine dopplungen entstehen
-      HashSet<Ditch> tobecheckedset = new HashSet<Ditch>();
-      HashSet<Ditch> checkedoffset = new HashSet<Ditch>();
-      HashSet<Field> tobecheckedfields = new HashSet<Field>();
-
-      //System.out.println(field);
-    //  System.out.println('\n');
-
+      HashSet<Ditch> tobecheckedset = new HashSet<Ditch>();   //set an zu checkenden Gräben
+      HashSet<Ditch> checkedoffset = new HashSet<Ditch>();    //um Fehlern bei .remove vorzubeugen ist hier stattdessen ein extra Set
+      HashSet<Field> tobecheckedfields = new HashSet<Field>();//set das die Felder auf der anderen Seite eines Graben enthält.
 
       checkYourGarden(field, tobecheckedset, playerditchset);
 
       for(Ditch ditch : tobecheckedset) {
         if(!checkedoffset.contains(ditch)) {
-          findFields(ditch, tobecheckedfields);
+          findFields(ditch, tobecheckedfields, color);
+          checkedoffset.add(ditch);
         }
       }
-      for(Field f : tobecheckedfields) {
-        anzahl += countingN(f, playerditchset);
-      }
+      for(Field f : tobecheckedfields) { // X
+        anzahl += countingN(f, playerditchset, color);
+      }// X
 
       if(field.getClusteramount() == 4) {
         anzahl++;
@@ -1392,17 +1366,17 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
   //============================================================================
   /**
    * Hilfsmethode fuer countingN. Alle Felder in demselben Garten wie das auf-
-   * rufende Feld 'sammeln' alle Graeben ein und checken sich selbst ab
-   * @param field          [description]
-   * @param tobecheckedset [description]
-   * @param playerditchset [description]
+   * rufende Feld 'sammeln' alle Graeben ein und checken sich selbst ab, sodass
+   * sie nicht noch einmal aufgerufen werden koennen.
+   * @param field          Feld auf dem checkYourGarden aufgerufen wird.
+   * @param tobecheckedset Set an zu checkenden Graeben
+   * @param playerditchset Set von Graeben des Spielers.
    */
   private void checkYourGarden (Field field, HashSet<Ditch> tobecheckedset, HashSet<Ditch> playerditchset) {
 
     field.setCheck(true);
-      //vv hierfuer brauch ich die Faerbung aus getPoints! vv
-    if(field.getRight() != null) {// alle die die selbe farbe haben, werden abgecheckt
-      if(field.getRight().getMark() == field.getMark()) {
+    if(field.getRight() != null) {
+      if(field.getRight().getMark() == field.getMark()) {//< hierfuer brauch ich die Faerbung aus getPoints!
         if(!field.getRight().getCheck()) {
           checkYourGarden(field.getRight(), tobecheckedset, playerditchset);
         }
@@ -1430,8 +1404,8 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
   }//END CHECKYOURGARDEN
   //============================================================================
   /**
-   * Hilfsmethode fuer getPoints. Berechnet die Punkte eines Garten-
-   * konglomerats auf Basis der in den Regeln festgelegten Weise
+   * Hilfsmethode fuer getPoints. Berechnet die Punkte eines Garten
+   * auf Basis der in den Regeln festgelegten Weise
    * @param  n Anzahl der verbundenen Garten
    * @return   Punkte
    */
@@ -1451,10 +1425,10 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
    * Hilfsmethode fuer countingN. addiert alle Felder an dem
    * ueber gebenen Graben ins tobecheckedfields-set, wenn diese noch
    * nicht checkYourGarden aufriefen.
-   * @param ditch             gebener Graben
-   * @param tobecheckedfields ins wird addiert
+   * @param ditch             gegebener Graben
+   * @param tobecheckedfields Set das die Felder auf der anderen Seite eines Graben enthält.
    */
-  private void findFields (Ditch ditch, HashSet<Field> tobecheckedfields) {//UNCHECKED
+  private void findFields (Ditch ditch, HashSet<Field> tobecheckedfields, PlayerColor color) {
 
     /*Hier kommen alle Felder rein, die auf der anderen Seite liegen.
       Denn Felder , die auf der anderen Seite liegen, muessen keine Nachbarn sein.
@@ -1465,355 +1439,12 @@ private void ckadField(Collection<Field> list ,Position p1,Position p2,Position 
 
       for(Field f : fieldset) {
         if(f.getCheck() == false) {
-          if(isDitchConnectedToFlower(ditch, f)) {
+          if(isDitchConnectedToFlower(ditch, f) && (f.getColor() == color)) {
             tobecheckedfields.add(f);
           }
         }
       }
 
   }//END FINDFIELDS
-  //============================================================================
-
-  public static void main (String[] args) {
-
-    int size = 8;
-
-    SWRBoard b = new SWRBoard(size);
-
-    /*Flower fa = Flower.parseFlower("{(2,3),(3,3),(3,2)}");
-    Flower fa1 = Flower.parseFlower("{(2,4),(1,5),(2,5)}");
-
-    Move mf = new Move(fa, fa1);
-    b.make(mf);
-    b.nextPlayer();
-
-    Ditch doa = Ditch.parseDitch("{(2,3),(2,4)}");
-
-    Move mv = new Move(doa);
-    b.make(mv);
-    b.nextPlayer();
-
-    for(Field f : b.fieldset) {
-      System.out.println(f);
-    }*/
-
-
-    /*System.out.println(b.getCurrentPlayer());
-    b.nextPlayer();
-    System.out.println(b.getCurrentPlayer());*/
-
-    //int testamount = 0;
-
-    //Ditch doa = Ditch.parseDitch("{(5,5),(4,5)}");
-
-    //Ditch doe = Ditch.parseDitch("{(4,5),(5,5)}");
-
-    /*Ditch doi = Ditch.parseDitch("{(3,5),(4,5)}");
-    Ditch dai = Ditch.parseDitch("{(4,2),(5,2)}");
-
-    Flower fa = Flower.parseFlower("{(3,2),(3,3),(4,2)}");
-    Flower fi = Flower.parseFlower("{(1,4),(2,4),(2,3)}");
-    Flower fu = Flower.parseFlower("{(2,3),(3,3),(2,4)}");
-    Flower fe = Flower.parseFlower("{(2,3),(3,3),(3,2)}");
-
-    Flower f1 = Flower.parseFlower("{(1,5),(2,5),(1,6)}");
-    Flower f2 = Flower.parseFlower("{(2,5),(1,6),(2,6)}");
-    Flower f3 = Flower.parseFlower("{(1,6),(2,6),(1,7)}");
-    Flower f4 = Flower.parseFlower("{(2,5),(2,6),(3,5)}");
-
-    Flower fa1 = Flower.parseFlower("{(4,6),(4,5),(5,5)}");
-    Flower fa2 = Flower.parseFlower("{(4,5),(4,4),(5,4)}");
-    Flower fa3 = Flower.parseFlower("{(4,5),(5,5),(5,4)}");
-    Flower fa4 = Flower.parseFlower("{(5,4),(5,5),(6,4)}");
-
-    Flower fi1 = Flower.parseFlower("{(5,3),(6,3),(6,2)}");
-    Flower fi2 = Flower.parseFlower("{(5,3),(6,2),(5,2)}");
-    Flower fi3 = Flower.parseFlower("{(5,1),(5,2),(6,1)}");
-    Flower fi4 = Flower.parseFlower("{(5,2),(6,2),(6,1)}");
-
-    Move mf = new Move(fa, fe);
-    b.make(mf);
-    b.nextPlayer();
-
-    Move mv = new Move(fi, fu);
-    b.make(mv);
-
-
-    Move m1 = new Move(f1, f2);
-    b.make(m1);
-    b.nextPlayer();
-
-    Move m2 = new Move(f3, f4);
-    b.make(m2);
-
-
-    Move m3 = new Move(fa1, fa2);
-    b.make(m3);
-    b.nextPlayer();
-
-    Move m4 = new Move(fa3, fa4);
-    b.make(m4);
-
-
-    Move m5 = new Move(fi1, fi2);
-    b.make(m5);
-    b.nextPlayer();
-
-    Move m6 = new Move(fi3, fi4);
-    b.make(m6);
-
-
-
-    Move m = new Move(doi);
-    b.make(m);
-    b.nextPlayer();
-
-
-    Move mo = new Move(dai);
-    b.make(mo);
-    b.nextPlayer();
-
-
-    for(Field f : b.fieldset) {
-      System.out.println(f);
-    }
-
-
-    System.out.println(b.getPoints(PlayerColor.Red));
-    System.out.println(b.getPoints(PlayerColor.Blue));
-
-    System.out.println(b.getStatus());
-
-
-
-    //System.out.println(doa.equals(doe));
-
-    /*Flower fo = Flower.parseFlower("{(3,6),(3,5),(4,5)}");
-    Flower fa = Flower.parseFlower("{(5,5),(5,4),(6,4)}");
-
-    b.redflowerset.add(fo);
-    b.redflowerset.add(fa);
-
-    Move m = new Move(doa);
-
-    b.make(m);
-
-    System.out.println(b.getStatus());*/
-
-    /*HashSet<Flower> testset = new HashSet<Flower>();
-
-    testset.add(fo);
-    testset.add(fa);*/
-
-  /*  for(Flower f : testset) {
-      if(b.isDitchConnectedToFlower(doa, f)) {
-        testamount++;
-      }
-    }
-
-    System.out.println(testamount);*/
-
-  /*  HashSet<Ditch> testset = new HashSet<Ditch>();
-
-    testset.add(doa);
-
-    for(Ditch d : testset) {
-      if(d.equals(doe)) {
-        System.out.println("true");
-      }
-    }*/
-
-    //System.out.println(b.checkDitchPositions(doe));
-
-
-    //checking isNeighborEmpty on empty board
-
-    /*Ditch da = Ditch.parseDitch("{(2,1),(2,2)}");
-    Ditch doe = Ditch.parseDitch("{(1,1),(2,2)}");
-    Ditch dae = Ditch.parseDitch("{(1,1),(1,2)}");
-
-    System.out.println(b.isNeighborEmpty(da));
-    System.out.println(b.isNeighborEmpty(doe));smite linugee
-    System.out.println(b.isNeighborEmpty(dae));*/
-
-    /*//checking isNeighborEmpty on filled Board
-
-    Ditch da = Ditch.parseDitch("{(1,2),(2,2)}");
-//CHECKING LATER
-    Flower af = Flower.parseFlower("{(1,3),(2,2),(2,3)}");
-    Flower bf = Flower.parseFlower("{(1,2),(2,2),(2,1)}");
-    for(Ditch d : redditchset) {
-      System.out.println(d);
-    }
-    b.redflowerset.add(af);
-    b.isNeighborEmpty(da);
-    b.redflowerset.add(bf);
-    b.isNeighborEmpty(da);
-
-*/
-
-    //System.out.println(b.p(4));
-
-  /*  HashSet<Integer> test1 = new HashSet<Integer>();
-    for(int i = 1; i <= 5; i++) {
-      test1.add(i);
-    }
-    HashSet<Integer> test2 = new HashSet<Integer>();
-    for(Integer j : test1) {
-      test2.add(j);
-    }
-    test2.remove(5);
-    for(Integer i : test1) {
-      System.out.println(i);
-    }
-    for(Integer i : test2) {
-      System.out.println(i);
-    }
-    //int x = b.getPoints(b.getCurrentPlayer());*/
-    //System.out.println(b.status);
-
-
-  /*  Flower flower = new Flower(new Position(2,5), new Position(2,4), new Position(3,4));
-    Flower flower1 = new Flower(new Position(2,4), new Position(3,4), new Position(3,3));
-    Flower flower2 = new Flower(new Position(3,3), new Position(3,4), new Position(4,3));
-    Flower flower3 = new Flower(new Position(3,3), new Position(4,3), new Position(4,2));
-
-    Flower flower5 = new Flower(new Position(1,2), new Position(2,2), new Position(1,3));
-    Flower flower6 = new Flower(new Position(2,2), new Position(3,2), new Position(2,3));
-    Flower flower7 = new Flower(new Position(2,2), new Position(1,3), new Position(2,3));
-    Flower flower8 = new Flower(new Position(1,3), new Position(2,3), new Position(1,4));
-
-    //Flower flower4 = new Flower(new Position(3,2), new Position(2,3), new Position(3,3));
-
-
-    b.redflowerset.add(flower);
-    b.redflowerset.add(flower1);
-    b.redflowerset.add(flower2);
-    b.redflowerset.add(flower3);
-    b.redflowerset.add(flower5);
-    b.redflowerset.add(flower6);
-    b.redflowerset.add(flower7);
-    b.redflowerset.add(flower8);
-
-
-
-    //b.redflowerset.add(flower4);
-
-    for(Field f : b.fieldset) {
-      System.out.println(f);
-    }
-    System.out.println("initial end");
-    int mark = 1; //1 = grau, andere ints sind andere farben fuer die felder
-    int amount = 0; // fuer schritt 7
-    //-vv Alle flowers kriegen eine graue Faerbung vv---------------------------
-    for(Flower flowery : b.redflowerset) {
-      for(Field field : b.fieldset) {
-        if(field.equals(flowery)) {
-          if(field.getMark() != -2) {//-2 ->wenn ditch da ist
-            field.setMark(mark);
-          }
-          else {
-            b.cleanUpMarks();
-          }
-        }
-      }
-    }//^^ --------------------------------------------------------------------^^
-    for(Field f : b.fieldset) {
-      System.out.println(f);
-      System.out.println("fVertical = " + f.getVertical());
-    }
-    System.out.println("after mark end");
-    //-vv Alle felder mit einer grauen Faerbung faerben sich und ihre grauen Nachbarn rekursiv
-    for(Field f : b.fieldset) {
-      //System.out.println("this is called by  col. : " + f + " " + f.getVertical());
-      if(f.getMark() == 1) {
-        System.out.println("this is called by add col. : " + f + " " + f.getVertical());
-        b.additionalColoring(f, ++mark);
-      }//Schritte 3-6
-    }//^^---------------------------------------------------------------------^^
-    /*for(Field f : b.fieldset) {
-      System.out.println(f);
-    }*/
-    /*System.out.println("after mark check");
-    int samount;
-    HashSet<Field> saveableguys = new HashSet<Field>();
-    HashSet<Field> gardenset = new HashSet<Field>();
-
-    //vv schritte 7-10 vv
-    for(int i = 2; i <= mark; i++) {//schritt 7
-      samount = 0;
-      for(Field f : b.fieldset) {
-        if(f.getMark() == i) {
-          saveableguys.add(f);  //saveableguys ist ein set, in dem felder vorgemerkt...
-          samount++;             //...werden, damit ihre beet/garten menge an feldern rueckgespeichert werden kann
-          if(samount > 4) { //hier schritt 9
-            b.cleanUpMarks();
-          }
-        }
-      }//ENDE FOREACH
-
-      for(Field f : saveableguys) {//hier werden saveableguys' mengen zurueckgespeichert
-        System.out.println(f);
-        f.setClusteramount(samount);
-        if(samount == 4) {          //gleichzeitig werden sie in ein set in dem alle gartenfelder sind,...
-          gardenset.add(f);        //...gespeichert, sobald die menge 4 ist
-        }
-      }//ENDE FOREACH
-      saveableguys.clear();// hier wird das set wieder geleert, damit nicht ...
-                          //... die falschen amount-werte gepseichert werden
-    }//ENDE FOR
-  /*  System.out.println("gardenset");
-    for(Field f : gardenset) {
-
-      System.out.println(f);
-    }*/
-
-      /*  for(Field f : gardenset) {    //hier wird dann ueber alle felder die in einem...
-          b.illegalColoring(f);         //...Garten sind, iteriert, damit diese die Felder um sich herum...
-        }                             //nach der Gartenabstandsregel als ungueltig markieren
-      /*  System.out.println("gardenset after ill. color.");
-        for(Field f : gardenset) {
-          System.out.println(f);
-        }
-        System.out.println("fieldset after illegal coloring");*/
-        /*for(Field f : b.fieldset) {
-          for(Flower flowerx: b.redflowerset) {
-            if(f.equals(flowerx) && (f.getMark() == -1)) { //hier wird das ganz ueberprueft:...
-              b.cleanUpMarks();                             //wenn ein feld gefunden wird, was eine blume auf...
-            }                                             //als markierung hat, wird false zurueckgegeben
-          }
-        }
-        for(Field f : b.fieldset) {
-          System.out.println(f);
-        }
-        b.cleanUpMarks();
-
-
-    //checkin checkDitchPositions
-  /*  Ditch di = Ditch.parseDitch("{(1,2),(2,1)}");
-    Ditch du = Ditch.parseDitch("{(1,1),(2,2)}");
-
-    System.out.println(b.checkDitchPositions(di));
-    System.out.println(b.checkDitchPositions(du));*/
-
-    /*Move m = new Move(MoveType.Surrender);
-    b.make(m);
-    System.out.println(b.status);*/
-
-  /*  Field [] fieldsettest = new Field[size * size];
-    Field [] fieldsettest2 = new Field[size * size];
-
-    b.fieldset.toArray(fieldsettest);
-    fieldsettest2 = fieldsettest.clone();
-    fieldsettest[0].setColor(PlayerColor.Red);
-
-    for(Field f : b.fieldset) {
-      System.out.println(f.toString());
-    }
-    for(Field f : fieldsettest2) {
-      System.out.println(f.toString());
-    }*/
-
-  }//END MAIN
   //============================================================================
 }//END CLASS
