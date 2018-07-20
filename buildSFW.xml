@@ -1,0 +1,56 @@
+<project name = "superflowerwars64" default = "main">
+	<property name = "build.dir" location = "build/classes"/>
+	<property name = "src.dir" location = "."/>
+
+	<target name = "compile">
+		<mkdir dir = "${build.dir}"/>
+		<javac
+			srcdir = "${src.dir}"
+			destdir = "${build.dir}"
+			includeantruntime = "false"
+		/>
+	</target>
+
+	<target name = "doc" depends = "compile">
+		<mkdir dir = "API"/>
+		<javadoc
+			sourcepath = "${src.dir}"
+			destdir = "API"
+			Private = "true"
+			>
+			<fileset dir = "${src.dir}">
+            	<include name = "**/*.java"/>
+            </fileset>
+		</javadoc>
+	</target>
+
+	<target name="run" depends="compile">
+		<java
+			fork = "true"
+			classpath = "${build.dir}"
+			classname = "app.superflowerwars64.SFW64"
+			>
+
+			<arg value="-red"/>
+			<!-- <arg value="human"/> -->
+			<!-- <arg value="random"/> -->
+			<arg value="adv1"/>
+
+			<arg value="-blue"/>
+			<!-- <arg value="human"/> -->
+			<!-- <arg value="random"/> -->
+			<arg value="adv1"/>
+
+			<arg value="-size"/>
+			<arg value="15"/>
+			<!-- fuer 2 adv1-Spieler
+				20-c.a.88Sekunden
+				15-c.a.16Sekunden
+			 	13-c.a.10Sekunden
+				datei von meinem alten PC-->
+	   </java>
+   </target>
+
+   <target name = "main" depends = "run"/>
+
+</project>
