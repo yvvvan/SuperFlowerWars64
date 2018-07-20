@@ -125,6 +125,7 @@ public class Position implements Serializable, Comparable<Position> {
         return row;
     }
 
+
     /**
      * Setze die Zeile der Position.
      *

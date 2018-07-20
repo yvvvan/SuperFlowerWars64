@@ -19,7 +19,7 @@ import java.lang.*;
     * @author Viktoriya Pak
 */
 
-public class GameboardGUI extends JPanel implements Requestable, Output{
+public class GameboardGUI extends JPanel {
     /**
         * Die Höhe des Spielbrettpanels.
         * Dieser Wert ist veränderbar und hängt von der Größe des Fensters
@@ -97,21 +97,31 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
 
     private MyViewer myViewer;
 
+    private GUI gui;
+
+    private int indexFirstFlower;
+
+    private int indexSecondFlower;
+
+    private int indexDitch;
     //private PlayerColor playerColor;
     /**
         * Fördert und liefert einen Zug
         * @return einen neuen Zug
     */
-    @Override
+
+    /*@Override
     public synchronized Move request() {
-      try {
-        GameboardGUI.class.wait();
-      } catch (Exception e) {
-        e.printStackTrace();
-      }
-      GameboardGUI.class.notifyAll();
+       Collection<Move> posMoves = myViewer.getPossibleMoves();
+       do {
+           try{
+             GameboardGUI.class.wait();
+           } catch (Exception e) {
+             e.printStackTrace();
+           }
+       } while (!posMoves.contains(getNewMove()));
       return getNewMove();
-    }
+  }*/
 
     /**
         * Getter-Methode für den Move-Objekt
@@ -149,6 +159,93 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         this.myViewer = myViewer;
     }
 
+
+    public synchronized void handleLastMove(Move lastMove) {
+        Collection<Move> posMoves = myViewer.getPossibleMoves();
+        System.out.println("SIZE OF COLLECTION: " + posMoves.size());
+        do {
+            try{
+              wait();
+            } catch (Exception e) {
+              e.printStackTrace();
+            }
+        } while (!posMoves.contains(getNewMove()));
+        System.out.println("\nMOVE TYPE: " + lastMove.getType() + "\n");
+        ArrayList<Position> pos = new ArrayList<Position>();
+        Flower flower1;
+        Flower flower2;
+        Ditch ditch;
+        Position[] posArr;
+        if (lastMove.getType() == MoveType.Flower) {
+            flower1 = lastMove.getFirstFlower();
+            pos.add(flower1.getFirst());
+            pos.add(flower1.getSecond());
+            pos.add(flower1.getThird());
+            Collections.sort(pos);
+            posArr = pos.toArray(new Position[pos.size()]);
+            for (Position[] posCnt : trianglesPositionsArray) {
+                if (posCnt[0] == posArr[0] && posCnt[1] == posArr[1] && posCnt[2] == posArr[2]) {
+                    indexFirstFlower = trianglesPositionsArray.indexOf(posCnt);
+                    colorTriangle[indexFirstFlower] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(204,51,51)) : (new Color(65, 105, 225)));
+                    System.out.println("First Flower Clicked: " + indexFirstFlower);
+                    break;
+                }
+            }
+            pos.clear();
+            flower2 = lastMove.getSecondFlower();
+            pos.add(flower2.getFirst());
+            pos.add(flower2.getSecond());
+            pos.add(flower2.getThird());
+            Collections.sort(pos);
+
+            posArr = pos.toArray(new Position[pos.size()]);
+            for (Position[] posCnt : trianglesPositionsArray) {
+                if (posCnt[0] == posArr[0] && posCnt[1] == posArr[1] && posCnt[2] == posArr[2]) {
+                    indexSecondFlower = trianglesPositionsArray.indexOf(posCnt);
+                    colorTriangle[indexSecondFlower] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(204,51,51)) : (new Color(65, 105, 225)));
+                     System.out.println("Second Flower Clicked: " + indexSecondFlower);
+                    break;
+                }
+            }
+            pos.clear();
+            repaintGameboard();
+        }
+        else if (lastMove.getType() == MoveType.Ditch) {
+            ditch = lastMove.getDitch();
+            pos.add(ditch.getFirst());
+            System.out.println("OOOOOO: " + pos.get(0));
+            pos.add(ditch.getSecond());
+            System.out.println("111111: " + pos.get(1));
+            Collections.sort(pos);
+            for (int i = 0; i < pos.size(); i++) {
+                System.out.println(pos.get(i));
+            }
+            posArr = pos.toArray(new Position[pos.size()]);
+            for (Position[] posCnt : linesPositionsArray) {
+                System.out.println("FOR-LOOP");
+                if ((posCnt[0] == posArr[0]) && (posCnt[1] == posArr[1])) {
+                    indexDitch = linesPositionsArray.indexOf(posCnt);
+                    colorLine[indexDitch] = ((myViewer.getTurn() == PlayerColor.Red) ? (new Color(222, 49, 99)) : (new Color(31, 117, 254)));
+                    System.out.println("Ditch Clicked in handleLastMove: " + indexDitch);
+                    break;
+                }
+            }
+            pos.clear();
+            repaintGameboard();
+        }
+        else if (lastMove.getType() == MoveType.Surrender) {
+            Graphics gr = getGraphics();
+            gr.drawString("Surrender", 100, 100);
+            System.out.println("Surrender");
+        }
+        else {
+            Graphics gr = getGraphics();
+            gr.drawString("Someone won", 100, 100);
+            System.out.println("Won");
+        }
+    }
+
+
     /**
         * Konstruktor der Klasse.
         * Enthält {@link WindowStateListener}, der neue Werte für {@link #panelWidth} und {@link #panelHeight} einsetzt,
@@ -162,8 +259,8 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         * @param size Die Größe des Spielbretts
     */
 
-    public GameboardGUI(JFrame frame, int size/*, MyViewer myViewer*/) {
-
+    public GameboardGUI(JFrame frame, int size, GUI gui) {
+        this.gui = gui;
         //this.myViewer = myViewer;
         WindowStateListener listener = new WindowAdapter() {
 
@@ -172,12 +269,10 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
                 int newState = evt.getNewState();
 
                 if ((oldState & Frame.MAXIMIZED_BOTH) == 0 && (newState & Frame.MAXIMIZED_BOTH) != 0) {
-                    //System.out.println("Frame was maximized");
                     panelHeight = frame.getHeight();
                     panelWidth = frame.getWidth();
                 }
                 else if ((oldState & Frame.MAXIMIZED_BOTH) != 0 && (newState & Frame.MAXIMIZED_BOTH) == 0) {
-                    //System.out.println("Frame was minimized");
                     panelHeight = frame.getHeight();
                     panelWidth = frame.getWidth();
                 }
@@ -204,6 +299,10 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         init_position();
 
         repaintGameboard();
+        int mkl = 0;
+        for (Position[] l : linesPositionsArray) {
+            System.out.println((mkl++) + " : " + l[0] + "," + l[1]);
+        }
 
         this.addComponentListener(new ComponentAdapter() {
             @Override
@@ -215,23 +314,29 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
 
         addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
+                System.out.println("Here");
                 boolean alreadyClickedLine = false;
                 double shapeSize = 5;
                 double xClick = e.getX()-shapeSize/2;
                 double yClick = e.getY()-shapeSize/2;
-
+                System.out.println("\nSIZE LINESARRAY: " + linesArray.size() + "\n");
                 for (Line l : linesArray) {
                   if (l.getLine().intersects(xClick, yClick, shapeSize, shapeSize) && (!linesArray.get(linesArray.indexOf(l)).isLineClicked())) {
                     System.out.println("Clicked Line");
                     alreadyClickedLine = true;
                     int indexLine = linesArray.indexOf(l);
                     synchronized(this) {
-                        if (ditch == null) {
-                          Ditch d = new Ditch(linesPositionsArray.get(indexLine)[0], linesPositionsArray.get(indexLine)[1]);
-                          setDitch(d);
-                          ditch = null;
-                        }
-                        notify();
+                          if (ditch == null) {
+                              Ditch d = new Ditch(linesPositionsArray.get(indexLine)[0], linesPositionsArray.get(indexLine)[1]);
+                              setDitch(d);
+                              newMove = new Move(d);
+                              System.out.println("MoveType = " + newMove.getType());
+                              System.out.println("Ditch Clicked in Listener: " + indexDitch);
+                              ditch = null;
+                              handleLastMove(newMove);
+                              notify();
+                          }
+
                     }
                     linesArray.get(indexLine).setLineClicked();
                     colorLine[indexLine] = new Color(222, 49, 99);
@@ -257,6 +362,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
 
                     for (Polygon poly : polyArray) {
                         if (!alreadyClickedLine && poly.contains(p) && (!trianglesArray[polyArray.indexOf(poly)].isTriangleClicked())) {
+
                             System.out.println("Clicked triangle");
                             int indexTriangle = polyArray.indexOf(poly);
 
@@ -268,13 +374,22 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
                                 else if (secondFlower == null) {
                                   Flower sndFl = new Flower(trianglesPositionsArray.get(indexTriangle)[0], trianglesPositionsArray.get(indexTriangle)[1], trianglesPositionsArray.get(indexTriangle)[2]);
                                   setSecondFlower(sndFl);
-                                }
-                                else {
                                   newMove = new Move(firstFlower, secondFlower);
                                   firstFlower = null;
                                   secondFlower = null;
+                                  //handleLastMove(newMove);
+                                  System.out.println("Flowers Clicked: " + indexFirstFlower + "   " + indexSecondFlower );
+                                  notify();
                                 }
-                                notify();
+                                /*else {
+                                  newMove = new Move(firstFlower, secondFlower);
+                                  firstFlower = null;
+                                  secondFlower = null;
+                                  //handleLastMove(newMove);
+                                  System.out.println("Flowers Clicked: " + indexFirstFlower + "   " + indexSecondFlower );
+                                  notify();
+                              }*/
+
                             }
                             trianglesArray[indexTriangle].setTriangleClicked(true);
 
@@ -295,7 +410,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
                                 tmpY[0] -= 9;
                                 tmpY[2] += 2;
                                 tmpY[1] += 1;
-                            }
+                                }
 
                             gr.fillPolygon(tmpX, tmpY, 3);
                             break;
@@ -336,6 +451,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         * Wird nur einmal im Konstruktior der Klasse aufgerufen
     */
     protected void init_position() {
+        System.out.println("Initialized positions");
         int lim = size;
         int cnt = size+1;
         int k = 0;
@@ -404,6 +520,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         }
     }
 
+
     /**
         * Aktualisiert die Koordinten für alle Objekte auf dem Spielbrett (nach Window-, Component- oder Mouse-Ereignissen)
         * für das weitere Zeichnen von {@link #paintComponent}
@@ -444,7 +561,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
         ypoints_g = ypoints;
 
         int[] triangleX = new int[3];
-		    int[] triangleY = new int[3];
+		int[] triangleY = new int[3];
         int lim = size;
         cnt = size+1;
         k = 0;
@@ -511,7 +628,7 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
     }
 
     /**
-        * Stellt Spielbrett-Objekte (Punkte, Linien für Gräben und Polygone für Dreickfelder) graphisch dar.
+        * Stellt Spielbrett-Objekte (Punkte, Linien für Gräben und Polygone für Dreieckfelder) graphisch dar.
     */
 
     protected void paintComponent(Graphics g) {
@@ -584,27 +701,5 @@ public class GameboardGUI extends JPanel implements Requestable, Output{
                 g.fillOval(xpoints_g[i]-6, ypoints_g[i]-3, size > 20 ? 17:22, size > 20 ? 17:22);
             }
         }
-    }
-
-    /**
-        * Erzeugt eine Instanz von {@link GameboardGUI}-Klasse und fügt andere Elemente
-        * des Spielbretts (Buttons, Punkten Tabelle) hinzu.
-        * @param size Die Größe des Spielbretts
-    */
-
-    public void display(int size) {
-        JFrame f = new JFrame("SuperFlowerWars64");
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setSize(1280, 1080);
-        JPanel gameboardPanel = new GameboardGUI(f, size);
-        JPanel scores = new Scores();
-
-        gameboardPanel.add(scores);
-        gameboardPanel.add(new Buttons());
-        gameboardPanel.setBackground(new Color(255,140,0));
-        scores.setBackground(new Color(255,140,0));
-
-        f.add(gameboardPanel);
-        f.setVisible(true);
     }
 }

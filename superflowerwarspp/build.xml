@@ -1,5 +1,5 @@
 <project name = "Gameboard" default = "main">
-	<property name = "build.dir" location = "build/classes"/>
+	<property name = "build.dir" location = "build/"/>
 	<property name = "src.dir" location = "."/>
 
 	<target name = "compile">
@@ -31,10 +31,14 @@
 		<java
 			fork = "true"
 			classpath = "${build.dir}"
-			classname = "app.testing.TestGameboard"
+			classname = "app.testing.TestGameboardGUI"
+
 			>
 			<arg value="4"/>
+			<!-- outputproperty = "javaoutput"> -->
+
 	   </java>
+
    </target>
 
    <target name = "main" depends = "doc,run"/>
